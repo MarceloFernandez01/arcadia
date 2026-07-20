@@ -2,24 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
-
-interface User {
-  name: string;
-}
+import { useState } from "react";
+import { clearAvUser } from "@/lib/avUser";
+import { useAvUser } from "@/lib/useAvUser";
 
 export default function Nav() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
-
-  useEffect(() => {
-    try {
-      setUser(JSON.parse(localStorage.getItem("av_user") || "null"));
-    } catch {
-      setUser(null);
-    }
-  }, [pathname]);
+  const user = useAvUser();
 
   const isActive = (name: "biblioteca" | "salon" | "auth") => {
     if (name === "biblioteca") {
@@ -32,8 +22,7 @@ export default function Nav() {
   const close = () => setOpen(false);
 
   const handleSignOut = () => {
-    localStorage.removeItem("av_user");
-    setUser(null);
+    clearAvUser();
   };
 
   return (

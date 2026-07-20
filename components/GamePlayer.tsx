@@ -1,28 +1,25 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Game } from "@/lib/data";
+import { useAvUser } from "@/lib/useAvUser";
 
 const MOCK_FINAL_SCORE = 47280;
 
 export default function GamePlayer({ game }: { game: Game }) {
   const router = useRouter();
+  const user = useAvUser();
+  const displayName = user ? user.name : "INVITADO";
   const [paused, setPaused] = useState(false);
   const [over, setOver] = useState(false);
-  const [name, setName] = useState("INVITADO");
+  const [name, setName] = useState(displayName);
   const [saved, setSaved] = useState(false);
 
-  useEffect(() => {
-    try {
-      const user: { name: string } | null = JSON.parse(localStorage.getItem("av_user") || "null");
-      setName(user ? user.name : "INVITADO");
-    } catch {
-      setName("INVITADO");
-    }
-  }, []);
-
-  const endGame = () => setOver(true);
+  const endGame = () => {
+    setName(displayName);
+    setOver(true);
+  };
 
   const restart = () => {
     setPaused(false);

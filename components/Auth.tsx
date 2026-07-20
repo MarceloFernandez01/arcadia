@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { setAvUser } from "@/lib/avUser";
 
 export default function Auth() {
   const router = useRouter();
@@ -11,7 +12,7 @@ export default function Auth() {
   const [email, setEmail] = useState("");
 
   const login = (u: { name: string } | null) => {
-    localStorage.setItem("av_user", JSON.stringify(u));
+    setAvUser(u);
     router.push("/");
   };
 
