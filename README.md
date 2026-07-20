@@ -6,7 +6,13 @@ Stack: Next.js 16.2.10 (App Router), React 19.2.4, TypeScript, Tailwind CSS v4.
 
 ## Estado actual
 
-MVP visual (`specs/01-mvp-visual.md`) implementado: 5 pantallas (Biblioteca, Detalle de juego, Reproductor, Auth, Salón de la Fama) migradas del prototipo estático (`references/templates/`) a rutas reales de App Router, con sesión y puntuaciones mock persistidas en `localStorage`. Sin backend, base de datos ni lógica de juego real.
+Specs implementadas en `specs/`:
+
+- `01-mvp-visual.md` — MVP visual: 5 pantallas (Biblioteca, Detalle de juego, Reproductor, Auth, Salón de la Fama) migradas del prototipo estático (`references/templates/`) a rutas reales de App Router, con sesión y puntuaciones mock persistidas en `localStorage`. Sin backend ni lógica de juego real.
+- `02-home-page.md` — página de inicio (`/`) con `components/Home.tsx`; la Biblioteca se movió de `/` a `/biblioteca`.
+- `03-about-page-resend.md` — página "Acerca de" (`/about`) con formulario de contacto que envía correos reales vía Resend desde una API Route (`app/api/contact/route.ts`).
+
+Para el envío de correos se necesita un `.env.local` (no versionado) basado en `.env.template`, con `RESEND_API_KEY` y `CONTACT_TO_EMAIL`.
 
 ## Usa Spec Driven Design
 
