@@ -1,6 +1,6 @@
 # Spec 03 — About page y envío de correo con Resend
 
-- **Estado:** Aprobado
+- **Estado:** Implementado
 - **Dependencias:** 01-mvp-visual, 02-home-page
 - **Fecha:** 2026-07-20
 - **Objetivo:** Agregar la página "Acerca de" (`/about`) con su formulario de contacto funcional, que envía correos reales mediante Resend a través de una API Route.
@@ -49,15 +49,15 @@ No hay persistencia ni modelo compartido — el mensaje vive solo mientras dura 
 
 ## Criterios de aceptación
 
-- [ ] `/about` renderiza el componente `About` con hero, misión, highlights, divisor scroll-reveal y formulario de contacto, visualmente equivalente a `about.jsx`/`home-about/styles.css`.
-- [ ] `Nav` muestra el enlace "Acerca de" apuntando a `/about`, tanto en escritorio como en el panel móvil, y se marca activo solo en `/about`.
-- [ ] Si se intenta enviar el formulario con `name`, `email` o `message` vacío, se dispara la animación shake y no se llama a la API.
-- [ ] Al enviar el formulario con datos válidos y `RESEND_API_KEY`/`CONTACT_TO_EMAIL` configurados correctamente, llega un correo real a la dirección de `CONTACT_TO_EMAIL`, con remitente `no-reply@arcadevault.gg`, `Reply-To` igual al email ingresado en el formulario, y el nombre/correo/mensaje en el cuerpo.
-- [ ] Tras un envío exitoso, se muestra la pantalla `terminal-success` con el nombre del remitente, igual que en el prototipo.
-- [ ] Si la API route falla (por ejemplo `RESEND_API_KEY` inválida), el formulario muestra un estado de error (línea `[FAIL]`) sin perder los datos escritos, y permite reintentar.
-- [ ] `app/api/contact/route.ts` responde 400 si falta algún campo, y no llama a Resend en ese caso.
-- [ ] `.env.local` existe con `RESEND_API_KEY` y `CONTACT_TO_EMAIL`, y no está trackeado por git (`git status` no lo muestra).
-- [ ] `resend` aparece como dependencia en `package.json`.
+- [x] `/about` renderiza el componente `About` con hero, misión, highlights, divisor scroll-reveal y formulario de contacto, visualmente equivalente a `about.jsx`/`home-about/styles.css`.
+- [x] `Nav` muestra el enlace "Acerca de" apuntando a `/about`, tanto en escritorio como en el panel móvil, y se marca activo solo en `/about`.
+- [x] Si se intenta enviar el formulario con `name`, `email` o `message` vacío, se dispara la animación shake y no se llama a la API.
+- [x] Al enviar el formulario con datos válidos y `RESEND_API_KEY`/`CONTACT_TO_EMAIL` configurados correctamente, llega un correo real a la dirección de `CONTACT_TO_EMAIL`, con remitente `no-reply@arcadevault.gg`, `Reply-To` igual al email ingresado en el formulario, y el nombre/correo/mensaje en el cuerpo.
+- [x] Tras un envío exitoso, se muestra la pantalla `terminal-success` con el nombre del remitente, igual que en el prototipo.
+- [x] Si la API route falla (por ejemplo `RESEND_API_KEY` inválida), el formulario muestra un estado de error (línea `[FAIL]`) sin perder los datos escritos, y permite reintentar.
+- [x] `app/api/contact/route.ts` responde 400 si falta algún campo, y no llama a Resend en ese caso.
+- [x] `.env.local` existe con `RESEND_API_KEY` y `CONTACT_TO_EMAIL`, y no está trackeado por git (`git status` no lo muestra).
+- [x] `resend` aparece como dependencia en `package.json`.
 
 ## Decisiones tomadas y descartadas
 

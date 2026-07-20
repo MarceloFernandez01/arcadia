@@ -89,8 +89,9 @@ export default function About() {
   const [form, setForm] = useState<ContactForm>({ name: "", email: "", message: "" });
   const [sent, setSent] = useState<string | null>(null);
   const [shake, setShake] = useState(false);
+  const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
 
-  const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (
       !form.name.trim() ||
@@ -102,7 +103,24 @@ export default function About() {
       setTimeout(() => setShake(false), 400);
       return;
     }
-    setSent(form.name.trim());
+
+    setStatus("loading");
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        setStatus("error");
+        return;
+      }
+      setStatus("idle");
+      setSent(form.name.trim());
+    } catch {
+      setStatus("error");
+    }
   };
 
   return (
@@ -190,9 +208,45 @@ export default function About() {
                     placeholder="Cuéntanos qué tienes en mente…"
                   ></textarea>
                 </div>
-                <button className="btn xl press" type="submit" style={{ width: "100%" }}>
-                  ▶ ENVIAR MENSAJE
+                <button
+                  className="btn xl press"
+                  type="submit"
+                  style={{ width: "100%" }}
+                  disabled={status === "loading"}
+                >
+                  {status === "loading" ? (
+                    <>
+                      <span className="spinner"></span> ENVIANDO...
+                    </>
+                  ) : (
+                    "▶ ENVIAR MENSAJE"
+                  )}
                 </button>
+                {status === "error" && (
+                  <div className="terminal-success" style={{ marginTop: 16, borderColor: "var(--magenta)" }}>
+                    <div className="term-bar">
+                      <span className="dot r"></span>
+                      <span className="dot y"></span>
+                      <span className="dot g"></span>
+                      <span className="term-title">VAULT-OS // TERMINAL</span>
+                    </div>
+                    <div className="term-body">
+                      <div className="line">
+                        <span className="prompt">vault@arcade:~$</span> ./send_message --to=team
+                      </div>
+                      <div className="line dim">[OK] Conectando con servidor…</div>
+                      <div className="line" style={{ color: "var(--magenta)" }}>
+                        [FAIL] No se pudo enviar el mensaje. Inténtalo de nuevo.
+                        <span className="caret">_</span>
+                      </div>
+                      <div style={{ marginTop: 18 }}>
+                        <button className="btn ghost" type="button" onClick={() => setStatus("idle")}>
+                          REINTENTAR
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </>
             ) : (
               <div className="terminal-success">
