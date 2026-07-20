@@ -1,6 +1,6 @@
 # Spec 02 — Home landing page
 
-- **Estado:** Aprobado
+- **Estado:** Implementado
 - **Dependencias:** 01-mvp-visual
 - **Fecha:** 2026-07-19
 - **Objetivo:** Agregar una nueva página de inicio (Home) como ruta principal (`/`) del proyecto, migrando `home.jsx` del prototipo, y mover la Biblioteca actual (grilla de juegos) a `/biblioteca`.
@@ -39,15 +39,15 @@ Este spec no introduce nuevas estructuras de datos en `lib/data.ts`. Los arrays 
 
 ## Criterios de aceptación
 
-- [ ] `/` y `/home` renderiza el componente `Home` con todas sus secciones (hero, "por qué Arcade Vault", juegos disponibles, estadísticas, actividad en vivo, precios/FAQ, CTA final) visualmente equivalentes a `home.jsx`/`home-about/styles.css`.
-- [ ] El hero del Home muestra las siluetas flotantes decorativas (`FloatingSilhouettes`) y las secciones aplican la animación scroll-reveal (clase `.reveal`/`.in`) al entrar en viewport.
-- [ ] La sección "Juegos disponibles ahora" del Home muestra los primeros 6 juegos de `GAMES` (`lib/data.ts`) como `MiniCard`, cada una navega a `/juego/[id]`.
-- [ ] Los botones "Explorar juegos", "Ver todos los juegos" y el CTA final del Home navegan a `/biblioteca`; el botón "Crear cuenta" navega a `/auth`; el enlace "Ver salón" navega a `/salon`.
-- [ ] `/biblioteca` muestra la misma grilla de juegos con búsqueda y filtro por categoría que antes vivía en `/`, sin cambios de comportamiento.
-- [ ] `Nav` muestra "Inicio" y "Biblioteca" como enlaces separados, tanto en escritorio como en el panel móvil; "Inicio" está activo solo en `/`, "Biblioteca" está activo en `/biblioteca`, `/juego/[id]` y `/jugar/[id]`.
-- [ ] `Nav` no muestra ningún enlace "Acerca de".
-- [ ] Navegar el flujo Home → Biblioteca → Detalle → Reproductor → volver a Biblioteca → Inicio, y Home → Salón de la Fama → volver, no produce errores en consola ni rutas rotas.
-- [ ] No existe la ruta `/about` ni ningún archivo que la implemente.
+- [x] `/` y `/home` renderiza el componente `Home` con todas sus secciones (hero, "por qué Arcade Vault", juegos disponibles, estadísticas, actividad en vivo, precios/FAQ, CTA final) visualmente equivalentes a `home.jsx`/`home-about/styles.css`.
+- [x] El hero del Home muestra las siluetas flotantes decorativas (`FloatingSilhouettes`) y las secciones aplican la animación scroll-reveal (clase `.reveal`/`.in`) al entrar en viewport.
+- [x] La sección "Juegos disponibles ahora" del Home muestra los primeros 6 juegos de `GAMES` (`lib/data.ts`) como `MiniCard`, cada una navega a `/juego/[id]`.
+- [x] Los botones "Explorar juegos", "Ver todos los juegos" y el CTA final del Home navegan a `/biblioteca`; el botón "Crear cuenta" navega a `/auth`; el enlace "Ver salón" navega a `/salon`.
+- [x] `/biblioteca` muestra la misma grilla de juegos con búsqueda y filtro por categoría que antes vivía en `/`, sin cambios de comportamiento.
+- [x] `Nav` muestra "Inicio" y "Biblioteca" como enlaces separados, tanto en escritorio como en el panel móvil; "Inicio" está activo solo en `/`, "Biblioteca" está activo en `/biblioteca`, `/juego/[id]` y `/jugar/[id]`.
+- [x] `Nav` no muestra ningún enlace "Acerca de".
+- [x] Navegar el flujo Home → Biblioteca → Detalle → Reproductor → volver a Biblioteca → Inicio, y Home → Salón de la Fama → volver, no produce errores en consola ni rutas rotas.
+- [x] No existe la ruta `/about` ni ningún archivo que la implemente.
 
 ## Decisiones tomadas y descartadas
 
