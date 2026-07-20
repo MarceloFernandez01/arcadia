@@ -88,17 +88,17 @@ No son parte del mock estático sino estado que la app lee/escribe en el navegad
 
 ## Criterios de aceptación
 
-- [ ] `app/globals.css` incluye el CSS portado de `styles.css` y las 5 pantallas se ven visualmente equivalentes al prototipo (paleta neón, tipografías pixel, efectos glow/scanline).
-- [ ] El layout global renderiza `Nav` y el footer en todas las rutas.
+- [x] `app/globals.css` incluye el CSS portado de `styles.css` y las 5 pantallas se ven visualmente equivalentes al prototipo (paleta neón, tipografías pixel, efectos glow/scanline).
+- [x] El layout global renderiza `Nav` y el footer en todas las rutas.
 - [ ] `/` (Biblioteca) muestra la grilla de `GAMES`, filtra por búsqueda de texto y por categoría (chips), y muestra el estado "NO HAY RESULTADOS" cuando el filtro no matchea nada.
-- [ ] `/juego/[id]` muestra la ficha del juego correspondiente al `id`, con sus stats y tabla de mejores puntuaciones generada por `seededScores`.
-- [ ] `/jugar/[id]` muestra el HUD y el marco CRT sin bucle de puntaje automático; el botón "Pausa" alterna el overlay de pausa; el botón "Fin" abre el modal de fin de partida con un puntaje mock fijo.
-- [ ] En el modal de fin de partida, ingresar iniciales y presionar "Guardar puntuación" persiste una entrada en `localStorage` bajo `av_scores` y cambia el UI a estado "guardado".
-- [ ] `/auth` permite alternar entre tabs "Iniciar sesión"/"Crear cuenta"; enviar el formulario o presionar "Jugar como invitado" guarda `av_user` en `localStorage` (o `null` para invitado) y navega a `/`.
-- [ ] Con `av_user` presente, `Nav` muestra el nombre de usuario en vez del botón "Iniciar sesión", y un click sobre el nombre cierra sesión (borra `av_user`) sin dropdown.
-- [ ] `/salon` muestra tabs por cada juego de `GAMES`, un podio con los 3 primeros puestos y una tabla de ranking; si hay sesión iniciada, se agrega la fila "tu mejor marca".
-- [ ] Navegar el flujo completo Biblioteca → Detalle → Reproductor → volver a Biblioteca, y Biblioteca → Salón de la Fama → volver, no produce errores en consola ni rutas rotas.
-- [ ] No existe ningún archivo/módulo del MVP que implemente lógica de juego jugable (colisiones, input de control, físicas).
+- [x] `/juego/[id]` muestra la ficha del juego correspondiente al `id`, con sus stats y tabla de mejores puntuaciones generada por `seededScores`.
+- [x] `/jugar/[id]` muestra el HUD y el marco CRT sin bucle de puntaje automático; el botón "Pausa" alterna el overlay de pausa; el botón "Fin" abre el modal de fin de partida con un puntaje mock fijo.
+- [x] En el modal de fin de partida, ingresar iniciales y presionar "Guardar puntuación" persiste una entrada en `localStorage` bajo `av_scores` y cambia el UI a estado "guardado".
+- [x] `/auth` permite alternar entre tabs "Iniciar sesión"/"Crear cuenta"; enviar el formulario o presionar "Jugar como invitado" guarda `av_user` en `localStorage` (o `null` para invitado) y navega a `/`.
+- [x] Con `av_user` presente, `Nav` muestra el nombre de usuario en vez del botón "Iniciar sesión", y un click sobre el nombre cierra sesión (borra `av_user`) sin dropdown.
+- [x] `/salon` muestra tabs por cada juego de `GAMES`, un podio con los 3 primeros puestos y una tabla de ranking; si hay sesión iniciada, se agrega la fila "tu mejor marca".
+- [x] Navegar el flujo completo Biblioteca → Detalle → Reproductor → volver a Biblioteca, y Biblioteca → Salón de la Fama → volver, no produce errores en consola ni rutas rotas.
+- [x] No existe ningún archivo/módulo del MVP que implemente lógica de juego jugable (colisiones, input de control, físicas).
 
 ## Decisiones tomadas y descartadas
 
