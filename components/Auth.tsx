@@ -13,7 +13,7 @@ export default function Auth() {
 
   const login = (u: { name: string } | null) => {
     setAvUser(u);
-    router.push("/");
+    router.push("/biblioteca");
   };
 
   const submit = (e: React.FormEvent) => {
