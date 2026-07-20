@@ -28,6 +28,10 @@ Se debe usar siempre /frontend-desing para diseñar la interfaz de usuario.
 
 Antes de levantar `npm run dev`, verificar si ya hay una instancia corriendo (por ejemplo, revisando procesos en el puerto 3000). Si ya hay una instancia levantada, reutilizarla en vez de levantar una nueva.
 
+## Screenshots de Playwright MCP
+
+Todos los screenshots tomados con el MCP de Playwright (`browser_take_screenshot`) deben guardarse en `.playwright-screenshots/`, pasando el parámetro `filename` con esa ruta (ej. `.playwright-screenshots/home.png`). Directorio ignorado por git.
+
 ## Arquitectura
 
 **Implementación real** (App Router, TypeScript), resultado de migrar el prototipo estático siguiendo `specs/01-mvp-visual.md`:
