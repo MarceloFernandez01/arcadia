@@ -11,12 +11,13 @@ export default function Nav() {
   const [open, setOpen] = useState(false);
   const user = useAvUser();
 
-  const isActive = (name: "inicio" | "biblioteca" | "salon" | "auth") => {
+  const isActive = (name: "inicio" | "biblioteca" | "salon" | "about" | "auth") => {
     if (name === "inicio") return pathname === "/";
     if (name === "biblioteca") {
       return pathname === "/biblioteca" || pathname.startsWith("/juego") || pathname.startsWith("/jugar");
     }
     if (name === "salon") return pathname === "/salon";
+    if (name === "about") return pathname === "/about";
     return pathname === "/auth";
   };
 
@@ -44,6 +45,9 @@ export default function Nav() {
           </Link>
           <Link href="/salon" className={isActive("salon") ? "active" : ""}>
             Salón de la Fama
+          </Link>
+          <Link href="/about" className={isActive("about") ? "active" : ""}>
+            Acerca de
           </Link>
         </div>
         <div className="spacer"></div>
@@ -78,6 +82,9 @@ export default function Nav() {
         </Link>
         <Link href="/salon" className={isActive("salon") ? "active" : ""} onClick={close}>
           Salón de la Fama
+        </Link>
+        <Link href="/about" className={isActive("about") ? "active" : ""} onClick={close}>
+          Acerca de
         </Link>
         <Link href="/auth" className={isActive("auth") ? "active" : ""} onClick={close}>
           {user ? "Cuenta" : "Iniciar Sesión"}
