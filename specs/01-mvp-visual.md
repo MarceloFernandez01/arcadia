@@ -90,7 +90,7 @@ No son parte del mock estático sino estado que la app lee/escribe en el navegad
 
 - [x] `app/globals.css` incluye el CSS portado de `styles.css` y las 5 pantallas se ven visualmente equivalentes al prototipo (paleta neón, tipografías pixel, efectos glow/scanline).
 - [x] El layout global renderiza `Nav` y el footer en todas las rutas.
-- [ ] `/` (Biblioteca) muestra la grilla de `GAMES`, filtra por búsqueda de texto y por categoría (chips), y muestra el estado "NO HAY RESULTADOS" cuando el filtro no matchea nada.
+- [x] `/` (Biblioteca) muestra la grilla de `GAMES`, filtra por búsqueda de texto y por categoría (chips), y muestra el estado "NO HAY RESULTADOS" cuando el filtro no matchea nada.
 - [x] `/juego/[id]` muestra la ficha del juego correspondiente al `id`, con sus stats y tabla de mejores puntuaciones generada por `seededScores`.
 - [x] `/jugar/[id]` muestra el HUD y el marco CRT sin bucle de puntaje automático; el botón "Pausa" alterna el overlay de pausa; el botón "Fin" abre el modal de fin de partida con un puntaje mock fijo.
 - [x] En el modal de fin de partida, ingresar iniciales y presionar "Guardar puntuación" persiste una entrada en `localStorage` bajo `av_scores` y cambia el UI a estado "guardado".
