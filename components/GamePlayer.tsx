@@ -70,6 +70,8 @@ export default function GamePlayer({ game }: { game: Game }) {
   };
 
   const restart = () => {
+    engineRef.current?.restart();
+    engineRef.current?.start();
     setPaused(false);
     setOver(false);
     setSaved(false);
@@ -78,7 +80,7 @@ export default function GamePlayer({ game }: { game: Game }) {
   const saveScore = () => {
     try {
       const all = JSON.parse(localStorage.getItem("av_scores") || "[]");
-      all.push({ game: game.id, score: MOCK_FINAL_SCORE, name, at: Date.now() });
+      all.push({ game: game.id, score: finalScore, name, at: Date.now() });
       localStorage.setItem("av_scores", JSON.stringify(all));
     } catch {
       // localStorage no disponible

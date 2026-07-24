@@ -1,6 +1,6 @@
 # Spec 05 — Juego Asteroids
 
-- **Estado:** Aprobado
+- **Estado:** Implementado
 - **Dependencias:** 01-mvp-visual, 02-home-page (rutas `/juego/[id]` y `/jugar/[id]`)
 - **Fecha:** 2026-07-24
 - **Objetivo:** Adaptar el juego Asteroids de referencia (`references/started-games/02-asteroids`) como un motor real en TypeScript/Canvas, integrado en `GamePlayer` bajo el nuevo id `asteroides`, notificando a React el puntaje/vidas/nivel en tiempo real.
@@ -76,21 +76,21 @@ export class AsteroidsEngine {
 
 ## Criterios de aceptación
 
-- [ ] `GAMES` en `lib/data.ts` incluye una entrada `asteroides` (título, descripciones, categoría `SHOOTER`, cover, color, `best`, `plays`), sin modificar ni eliminar la entrada `rocas`.
-- [ ] `/juego/asteroides` muestra el detalle del juego y `/jugar/asteroides` renderiza `GamePlayer` con un `<canvas>` de 800×600 dentro de `.crt-screen`, en vez del arena mock.
-- [ ] Dentro del canvas, la nave rota (`←`/`→`), propulsa (`↑`), dispara (`Espacio`), los asteroides grandes se dividen en medianos y estos en pequeños, y aparecen partículas de explosión al destruirlos — igual que el juego de referencia.
-- [ ] El power-up de triple disparo aparece y funciona igual que en `game.js` (radio de recolección, duración, disparo triple).
-- [ ] El HUD de React (`player-hud`: Puntuación, Vidas, Nivel) refleja en tiempo real los valores reales del motor (no valores fijos), actualizándose solo cuando cambian.
-- [ ] El HUD dibujado dentro del canvas (`drawHUD`) sigue mostrando SCORE/NIVEL/vidas/triple-shot, igual que el original.
-- [ ] El botón "PAUSA" detiene realmente el loop del motor (los asteroides/nave dejan de moverse) y "REANUDAR" lo reactiva sin saltos bruscos de física.
-- [ ] El botón "FIN" congela el motor sin matar la nave ni descontar vidas, y abre el modal de fin de partida mostrando el puntaje real acumulado hasta ese momento.
-- [ ] Al perder la tercera vida dentro del canvas, se abre automáticamente el mismo modal de fin de partida con el puntaje real, sin que el canvas dibuje su propio overlay de "GAME OVER" ni reinicie con Espacio.
-- [ ] "GUARDAR PUNTUACIÓN" en el modal escribe en `av_scores` (localStorage) el puntaje real de la partida (no `MOCK_FINAL_SCORE`).
-- [ ] "JUGAR DE NUEVO" reinicia el motor a un estado nuevo (score 0, 3 vidas, nivel 1) y el canvas vuelve a ser jugable.
-- [ ] Salir del juego (botón "SALIR" o navegar fuera de `/jugar/asteroides`) cancela el `requestAnimationFrame` y remueve los listeners de teclado del motor, sin dejar el loop corriendo en segundo plano.
-- [ ] El resto de juegos de `GAMES` (incluida `rocas`) siguen mostrando el arena mock sin cambios.
-- [ ] No se muestra ningún ranking/leaderboard nuevo asociado a Asteroids en este spec.
-- [ ] `npm run build` compila sin errores de tipos tras agregar el motor y los cambios en `GamePlayer.tsx`.
+- [x] `GAMES` en `lib/data.ts` incluye una entrada `asteroides` (título, descripciones, categoría `SHOOTER`, cover, color, `best`, `plays`), sin modificar ni eliminar la entrada `rocas`.
+- [x] `/juego/asteroides` muestra el detalle del juego y `/jugar/asteroides` renderiza `GamePlayer` con un `<canvas>` de 800×600 dentro de `.crt-screen`, en vez del arena mock.
+- [x] Dentro del canvas, la nave rota (`←`/`→`), propulsa (`↑`), dispara (`Espacio`), los asteroides grandes se dividen en medianos y estos en pequeños, y aparecen partículas de explosión al destruirlos — igual que el juego de referencia.
+- [x] El power-up de triple disparo aparece y funciona igual que en `game.js` (radio de recolección, duración, disparo triple).
+- [x] El HUD de React (`player-hud`: Puntuación, Vidas, Nivel) refleja en tiempo real los valores reales del motor (no valores fijos), actualizándose solo cuando cambian.
+- [x] El HUD dibujado dentro del canvas (`drawHUD`) sigue mostrando SCORE/NIVEL/vidas/triple-shot, igual que el original.
+- [x] El botón "PAUSA" detiene realmente el loop del motor (los asteroides/nave dejan de moverse) y "REANUDAR" lo reactiva sin saltos bruscos de física.
+- [x] El botón "FIN" congela el motor sin matar la nave ni descontar vidas, y abre el modal de fin de partida mostrando el puntaje real acumulado hasta ese momento.
+- [x] Al perder la tercera vida dentro del canvas, se abre automáticamente el mismo modal de fin de partida con el puntaje real, sin que el canvas dibuje su propio overlay de "GAME OVER" ni reinicie con Espacio.
+- [x] "GUARDAR PUNTUACIÓN" en el modal escribe en `av_scores` (localStorage) el puntaje real de la partida (no `MOCK_FINAL_SCORE`).
+- [x] "JUGAR DE NUEVO" reinicia el motor a un estado nuevo (score 0, 3 vidas, nivel 1) y el canvas vuelve a ser jugable.
+- [x] Salir del juego (botón "SALIR" o navegar fuera de `/jugar/asteroides`) cancela el `requestAnimationFrame` y remueve los listeners de teclado del motor, sin dejar el loop corriendo en segundo plano.
+- [x] El resto de juegos de `GAMES` (incluida `rocas`) siguen mostrando el arena mock sin cambios.
+- [x] No se muestra ningún ranking/leaderboard nuevo asociado a Asteroids en este spec.
+- [x] `npm run build` compila sin errores de tipos tras agregar el motor y los cambios en `GamePlayer.tsx`.
 
 ## Decisiones tomadas y descartadas
 
