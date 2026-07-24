@@ -340,6 +340,7 @@ export class AsteroidsEngine {
   private level = 1;
   private state: EngineState = "playing";
   private deadTimer = 0;
+  private lastNotified: AsteroidsEngineState | null = null;
 
   private lastTime: number | null = null;
   private rafId: number | null = null;
@@ -404,6 +405,23 @@ export class AsteroidsEngine {
     return val;
   }
 
+  private notifyStateChange() {
+    const current: AsteroidsEngineState = {
+      score: this.score,
+      lives: this.lives,
+      level: this.level,
+    };
+    if (
+      !this.lastNotified ||
+      this.lastNotified.score !== current.score ||
+      this.lastNotified.lives !== current.lives ||
+      this.lastNotified.level !== current.level
+    ) {
+      this.lastNotified = current;
+      this.options.onStateChange(current);
+    }
+  }
+
   private spawnAsteroids(count: number) {
     const SAFE_DIST = 130;
     for (let i = 0; i < count; i++) {
@@ -429,6 +447,7 @@ export class AsteroidsEngine {
     this.level = 1;
     this.state = "playing";
     this.spawnAsteroids(4);
+    this.notifyStateChange();
   }
 
   private nextLevel() {
@@ -440,6 +459,7 @@ export class AsteroidsEngine {
     this.killsSinceSpawn = 0;
     this.ship.reset();
     this.spawnAsteroids(3 + this.level);
+    this.notifyStateChange();
   }
 
   private explode(x: number, y: number, count = 8) {
@@ -450,8 +470,10 @@ export class AsteroidsEngine {
     this.explode(this.ship.x, this.ship.y, 14);
     this.ship.dead = true;
     this.lives--;
+    this.notifyStateChange();
     if (this.lives <= 0) {
       this.state = "gameover";
+      this.options.onGameOver(this.score);
     } else {
       this.state = "dead";
       this.deadTimer = 2;
@@ -460,7 +482,6 @@ export class AsteroidsEngine {
 
   private update(dt: number) {
     if (this.state === "gameover") {
-      if (this.pressed("Space")) this.initGame();
       this.particles.forEach((p) => p.update(dt));
       this.particles = this.particles.filter((p) => !p.dead);
       return;
@@ -508,6 +529,7 @@ export class AsteroidsEngine {
           b.dead = true;
           a.dead = true;
           this.score += POINTS[a.size];
+          this.notifyStateChange();
           this.explode(a.x, a.y, a.size * 5);
           newAsteroids.push(...a.split());
           if (!this.powerUpSpawned) {
@@ -576,17 +598,6 @@ export class AsteroidsEngine {
     }
   }
 
-  private drawOverlay(title: string, sub: string) {
-    const ctx = this.ctx;
-    ctx.textAlign = "center";
-    ctx.fillStyle = "#fff";
-    ctx.font = "bold 46px monospace";
-    ctx.fillText(title, W / 2, H / 2 - 18);
-    ctx.font = "18px monospace";
-    ctx.fillStyle = "rgba(255,255,255,0.65)";
-    ctx.fillText(sub, W / 2, H / 2 + 22);
-  }
-
   private draw() {
     const ctx = this.ctx;
     ctx.fillStyle = "#000";
@@ -599,10 +610,6 @@ export class AsteroidsEngine {
     this.ship.draw(ctx);
 
     this.drawHUD();
-
-    if (this.state === "gameover") {
-      this.drawOverlay("GAME OVER", `PUNTAJE: ${this.score}   —   ESPACIO PARA REINICIAR`);
-    }
   }
 
   private loop = (ts: number) => {
