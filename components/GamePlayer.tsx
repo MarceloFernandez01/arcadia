@@ -27,13 +27,19 @@ export default function GamePlayer({ game }: { game: Game }) {
     lives: 3,
     level: 1,
   });
+  const [finalScore, setFinalScore] = useState(MOCK_FINAL_SCORE);
 
   useEffect(() => {
     if (!hasRealEngine || !canvasRef.current) return;
 
     const engine = new AsteroidsEngine(canvasRef.current, {
       onStateChange: setEngineState,
-      onGameOver: () => {},
+      onGameOver: (score) => {
+        engine.pause();
+        setFinalScore(score);
+        setName(displayName);
+        setOver(true);
+      },
     });
     engineRef.current = engine;
     engine.start();
@@ -57,6 +63,8 @@ export default function GamePlayer({ game }: { game: Game }) {
   };
 
   const endGame = () => {
+    engineRef.current?.pause();
+    setFinalScore(hasRealEngine ? engineState.score : MOCK_FINAL_SCORE);
     setName(displayName);
     setOver(true);
   };
@@ -164,7 +172,7 @@ export default function GamePlayer({ game }: { game: Game }) {
           <div className="modal">
             <h2>FIN DEL JUEGO</h2>
             <div className="final-label">PUNTUACIÓN FINAL</div>
-            <div className="final">{MOCK_FINAL_SCORE.toLocaleString("es-ES")}</div>
+            <div className="final">{finalScore.toLocaleString("es-ES")}</div>
             {!saved ? (
               <div className="input-row">
                 <input
