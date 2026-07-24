@@ -4,6 +4,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Debes hablarme siempre en español neutro, el codigo ppuede estar en ingles. debe evitar simepre usar modismos y voceos.
 
+Regla reforzada: nada de "vos" ni sus conjugaciones ("tenés", "sos", "podés", "revisás", "dale"), ni en saludos/cierres ni en el cuerpo técnico de la respuesta (ej.: "las agregaste vos mismo antes" es incorrecto; usar "las agregaste tú antes"). Usar siempre "tú"/"usted".
+
 ## Advertencia de versión
 
 Este proyecto usa **Next.js 16.2.10** (App Router) con **React 19.2.4** y **Tailwind CSS v4**. Es una versión más nueva de la que puede reflejar tu conocimiento previo: APIs, convenciones y estructura de archivos pueden diferir. Antes de usar una API de Next.js de la que no estés seguro, consulta la documentación local en `node_modules/next/dist/docs/` (secciones `01-app` para App Router, `02-pages` para Pages Router) en vez de asumir comportamiento de versiones anteriores. Presta atención a los avisos de deprecación.
