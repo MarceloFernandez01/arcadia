@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Game } from "@/lib/data";
 import { useAvUser } from "@/lib/useAvUser";
-import { AsteroidsEngine } from "@/lib/games/asteroids/engine";
+import { AsteroidsEngine, type AsteroidsEngineState } from "@/lib/games/asteroids/engine";
 
 const MOCK_FINAL_SCORE = 47280;
 
@@ -22,12 +22,17 @@ export default function GamePlayer({ game }: { game: Game }) {
   const hasRealEngine = REAL_ENGINE_GAME_IDS.includes(game.id);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const engineRef = useRef<AsteroidsEngine | null>(null);
+  const [engineState, setEngineState] = useState<AsteroidsEngineState>({
+    score: 0,
+    lives: 3,
+    level: 1,
+  });
 
   useEffect(() => {
     if (!hasRealEngine || !canvasRef.current) return;
 
     const engine = new AsteroidsEngine(canvasRef.current, {
-      onStateChange: () => {},
+      onStateChange: setEngineState,
       onGameOver: () => {},
     });
     engineRef.current = engine;
@@ -38,6 +43,18 @@ export default function GamePlayer({ game }: { game: Game }) {
       engineRef.current = null;
     };
   }, [hasRealEngine]);
+
+  const togglePause = () => {
+    setPaused((p) => {
+      const next = !p;
+      if (next) {
+        engineRef.current?.pause();
+      } else {
+        engineRef.current?.resume();
+      }
+      return next;
+    });
+  };
 
   const endGame = () => {
     setName(displayName);
@@ -73,19 +90,23 @@ export default function GamePlayer({ game }: { game: Game }) {
           </div>
           <div className="hud-stat">
             <div className="l">Puntuación</div>
-            <div className="v">0</div>
+            <div className="v">{hasRealEngine ? engineState.score : 0}</div>
           </div>
           <div className="hud-stat lives">
             <div className="l">Vidas</div>
-            <div className="v">♥ ♥ ♥</div>
+            <div className="v">
+              {hasRealEngine ? Array(engineState.lives).fill("♥").join(" ") : "♥ ♥ ♥"}
+            </div>
           </div>
           <div className="hud-stat level">
             <div className="l">Nivel</div>
-            <div className="v">01</div>
+            <div className="v">
+              {(hasRealEngine ? engineState.level : 1).toString().padStart(2, "0")}
+            </div>
           </div>
         </div>
         <div className="hud-actions">
-          <button className="btn yellow" onClick={() => setPaused((p) => !p)}>
+          <button className="btn yellow" onClick={togglePause}>
             {paused ? "REANUDAR" : "PAUSA"}
           </button>
           <button className="btn magenta" onClick={endGame}>
