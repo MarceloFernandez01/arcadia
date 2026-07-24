@@ -1,11 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Game } from "@/lib/data";
 import { useAvUser } from "@/lib/useAvUser";
+import { AsteroidsEngine } from "@/lib/games/asteroids/engine";
 
 const MOCK_FINAL_SCORE = 47280;
+
+const REAL_ENGINE_GAME_IDS = ["asteroides"];
 
 export default function GamePlayer({ game }: { game: Game }) {
   const router = useRouter();
@@ -15,6 +18,26 @@ export default function GamePlayer({ game }: { game: Game }) {
   const [over, setOver] = useState(false);
   const [name, setName] = useState(displayName);
   const [saved, setSaved] = useState(false);
+
+  const hasRealEngine = REAL_ENGINE_GAME_IDS.includes(game.id);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const engineRef = useRef<AsteroidsEngine | null>(null);
+
+  useEffect(() => {
+    if (!hasRealEngine || !canvasRef.current) return;
+
+    const engine = new AsteroidsEngine(canvasRef.current, {
+      onStateChange: () => {},
+      onGameOver: () => {},
+    });
+    engineRef.current = engine;
+    engine.start();
+
+    return () => {
+      engine.destroy();
+      engineRef.current = null;
+    };
+  }, [hasRealEngine]);
 
   const endGame = () => {
     setName(displayName);
@@ -76,20 +99,32 @@ export default function GamePlayer({ game }: { game: Game }) {
 
       <div className="crt">
         <div className="crt-screen">
-          <div className="game-arena">
-            <div className="grid-floor"></div>
-            <div className="enemy e1"></div>
-            <div className="enemy e2"></div>
-            <div className="enemy e3"></div>
-            <div className="player-ship"></div>
-          </div>
+          {hasRealEngine ? (
+            <canvas ref={canvasRef} width={800} height={600} className="asteroids-canvas" />
+          ) : (
+            <div className="game-arena">
+              <div className="grid-floor"></div>
+              <div className="enemy e1"></div>
+              <div className="enemy e2"></div>
+              <div className="enemy e3"></div>
+              <div className="player-ship"></div>
+            </div>
+          )}
           {paused && (
             <div className="crt-content" style={{ background: "rgba(0,0,0,0.6)", zIndex: 5 }}>
               <div>
                 <div className="pixel neon-yellow" style={{ fontSize: 22 }}>
                   EN PAUSA
                 </div>
-                <div className="mono" style={{ fontSize: 11, color: "var(--ink-dim)", marginTop: 10, letterSpacing: "0.16em" }}>
+                <div
+                  className="mono"
+                  style={{
+                    fontSize: 11,
+                    color: "var(--ink-dim)",
+                    marginTop: 10,
+                    letterSpacing: "0.16em",
+                  }}
+                >
                   PULSA REANUDAR PARA CONTINUAR
                 </div>
               </div>
@@ -98,9 +133,7 @@ export default function GamePlayer({ game }: { game: Game }) {
         </div>
         <div className="crt-bottom">
           <span className="led">SEÑAL OK</span>
-          <span>
-            {game.title} · CRT-83 · 60 HZ
-          </span>
+          <span>{game.title} · CRT-83 · 60 HZ</span>
           <span>CARGA · 1MB</span>
         </div>
       </div>
