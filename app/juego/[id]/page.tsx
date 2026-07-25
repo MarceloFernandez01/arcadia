@@ -1,6 +1,5 @@
 import { notFound } from "next/navigation";
 import GameDetail from "@/components/GameDetail";
-import { seededScores } from "@/lib/data";
 import { getGameById } from "@/lib/games";
 import { getTopScores } from "@/lib/scores.server";
 
@@ -10,8 +9,7 @@ export default async function GameDetailPage({ params }: { params: Promise<{ id:
 
   if (!game) notFound();
 
-  const scores =
-    id === "asteroides" ? await getTopScores(id, 10) : seededScores(id.length * 17 + 3, 10);
+  const scores = await getTopScores(id, 10);
 
   return <GameDetail game={game} scores={scores} />;
 }

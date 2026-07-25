@@ -1,9 +1,11 @@
 # Spec 06 — Leaderboard y tabla de juegos en Supabase
 
-- **Estado:** Implementado
+- **Estado:** Implementado (ver nota de actualización al final: el catálogo pasó de mixto a fuente única en Supabase)
 - **Dependencias:** 04-integracion-supabase (clientes Supabase), 05-asteroids-game (único juego con puntaje real hoy)
 - **Fecha:** 2026-07-24
 - **Objetivo:** Migrar el catálogo de juegos y los puntajes de `lib/data.ts`/`localStorage` a tablas reales `games` y `scores` en Supabase, de modo que el Salón de la Fama (`HallOfFame.tsx`) consulte el ranking directamente desde Supabase (no desde datos simulados) y el guardado de Asteroids escriba puntajes reales en la tabla `scores`, sin autenticación real todavía.
+
+> **Nota (2026-07-24, más tarde el mismo día):** el catálogo mock de `GAMES` (`bloque-buster`, `caida`, `serpentina`, `gloton`, `invasores`, `rocas`, `ranaria`, `duelo-pixel`) se eliminó por completo de `lib/data.ts`, junto con `PLAYERS`, `seededScores()` y `getRealGames()`. El catálogo de juegos pasó a tener **una sola fuente: la tabla `games` de Supabase**. `getAllGames()` ya no combina mock + reales (solo consulta Supabase); `getGameById()` ya no cae a `GAMES` si Supabase no encuentra el id; `/juego/[id]` usa siempre `getTopScores()` (nunca `seededScores`); y `GamePlayer.tsx` perdió la rama mock (`MOCK_FINAL_SCORE`, `REAL_ENGINE_GAME_IDS`, la arena CSS falsa y el guardado en `localStorage["av_scores"]`) — todo juego usa el motor real y guarda en Supabase. Los criterios de aceptación y decisiones que mencionan el catálogo mixto abajo describen el estado histórico de este spec, ya superado.
 
 ## Alcance
 
