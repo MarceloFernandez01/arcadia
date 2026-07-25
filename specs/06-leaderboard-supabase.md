@@ -1,6 +1,6 @@
 # Spec 06 — Leaderboard y tabla de juegos en Supabase
 
-- **Estado:** Aprobada
+- **Estado:** Implementado
 - **Dependencias:** 04-integracion-supabase (clientes Supabase), 05-asteroids-game (único juego con puntaje real hoy)
 - **Fecha:** 2026-07-24
 - **Objetivo:** Migrar el catálogo de juegos y los puntajes de `lib/data.ts`/`localStorage` a tablas reales `games` y `scores` en Supabase, de modo que el Salón de la Fama (`HallOfFame.tsx`) consulte el ranking directamente desde Supabase (no desde datos simulados) y el guardado de Asteroids escriba puntajes reales en la tabla `scores`, sin autenticación real todavía.
@@ -118,21 +118,21 @@ El tipo `Game` de `lib/data.ts` se mantiene igual (mismos campos, `best`/`plays`
 
 ## Criterios de aceptación
 
-- [ ] Existen las tablas `games` y `scores` en Supabase (verificable con `list_tables`), con RLS habilitado: `games` con `games_public_read`/`games_public_insert`/`games_public_update` (sin `delete`); `scores` con `scores_public_read`/`scores_public_insert` (sin `update`/`delete`).
-- [ ] La tabla `games` contiene exactamente una fila (`asteroides`), con los mismos valores (título, descripciones, cat, cover, color) que tenía su entrada en `GAMES` antes de migrarla.
-- [ ] `lib/data.ts` ya no incluye la entrada `asteroides` en `GAMES`; el resto de los juegos (`bloque-buster`, `caida`, `serpentina`, `gloton`, `rocas`) siguen ahí sin cambios.
-- [ ] `getAllGames()` devuelve la lista combinada (mock de `lib/data.ts` + `asteroides` desde Supabase) y `/`, `/biblioteca` muestran los mismos juegos que antes, sin duplicados ni faltantes.
-- [ ] `getGameById("asteroides")` resuelve desde Supabase; `getGameById()` para cualquier otro id resuelve desde `GAMES`.
-- [ ] El input de nombre en el modal de fin de partida se precompleta con el valor guardado en `localStorage` (`av_player_name`) si existe una partida previa guardada; si no existe, se precompleta como hoy (`displayName`).
-- [ ] Al jugar una partida de Asteroids y presionar "GUARDAR PUNTUACIÓN", se inserta una fila nueva en `scores` (`game_id: "asteroides"`, `player_name` = valor del input, `score` real, `user_id: null`) — verificable con una consulta a la tabla. El nombre escrito queda persistido en `localStorage` (`av_player_name`).
-- [ ] `/salon` muestra un tab únicamente por cada juego real (Supabase) — ningún juego hardcodeado de `lib/data.ts` aparece en el Salón de la Fama.
-- [ ] Con solo `asteroides` en la tabla `games`, `/salon` muestra un único tab; al agregar un futuro juego real a Supabase, aparece automáticamente un tab nuevo sin tocar código de `HallOfFame.tsx`.
-- [ ] Si la tabla `scores` no tiene filas para un juego real, `/salon` muestra el mensaje de estado vacío en ese tab, con el mismo estilo visual (tipografía pixel, colores, espaciado) que el resto del Salón de la Fama — no un texto plano sin formato.
-- [ ] `/salon`, tab "ASTEROIDES", muestra el top real de `scores` (ordenado de mayor a menor), incluyendo la partida recién guardada tras recargar.
-- [ ] `/juego/asteroides` muestra el mismo top real de `scores` que el Salón de la Fama.
-- [ ] `best`/`plays` de `asteroides` en Home/Biblioteca reflejan `MAX(score)`/`COUNT(*)` real de `scores` una vez existe al menos una partida guardada; antes de la primera partida, muestran `best_seed`/`plays_seed`.
-- [ ] `npm run build` compila sin errores de tipos tras convertir las páginas a Server Components async y actualizar los componentes a recibir props.
-- [ ] Ningún otro juego (aparte de `asteroides`) aparece en la tabla `games` de Supabase.
+- [x] Existen las tablas `games` y `scores` en Supabase (verificable con `list_tables`), con RLS habilitado: `games` con `games_public_read`/`games_public_insert`/`games_public_update` (sin `delete`); `scores` con `scores_public_read`/`scores_public_insert` (sin `update`/`delete`).
+- [x] La tabla `games` contiene exactamente una fila (`asteroides`), con los mismos valores (título, descripciones, cat, cover, color) que tenía su entrada en `GAMES` antes de migrarla.
+- [x] `lib/data.ts` ya no incluye la entrada `asteroides` en `GAMES`; el resto de los juegos (`bloque-buster`, `caida`, `serpentina`, `gloton`, `rocas`) siguen ahí sin cambios.
+- [x] `getAllGames()` devuelve la lista combinada (mock de `lib/data.ts` + `asteroides` desde Supabase) y `/`, `/biblioteca` muestran los mismos juegos que antes, sin duplicados ni faltantes.
+- [x] `getGameById("asteroides")` resuelve desde Supabase; `getGameById()` para cualquier otro id resuelve desde `GAMES`.
+- [x] El input de nombre en el modal de fin de partida se precompleta con el valor guardado en `localStorage` (`av_player_name`) si existe una partida previa guardada; si no existe, se precompleta como hoy (`displayName`).
+- [x] Al jugar una partida de Asteroids y presionar "GUARDAR PUNTUACIÓN", se inserta una fila nueva en `scores` (`game_id: "asteroides"`, `player_name` = valor del input, `score` real, `user_id: null`) — verificable con una consulta a la tabla. El nombre escrito queda persistido en `localStorage` (`av_player_name`).
+- [x] `/salon` muestra un tab únicamente por cada juego real (Supabase) — ningún juego hardcodeado de `lib/data.ts` aparece en el Salón de la Fama.
+- [x]Con solo `asteroides` en la tabla `games`, `/salon` muestra un único tab; al agregar un futuro juego real a Supabase, aparece automáticamente un tab nuevo sin tocar código de `HallOfFame.tsx`.
+- [x] Si la tabla `scores` no tiene filas para un juego real, `/salon` muestra el mensaje de estado vacío en ese tab, con el mismo estilo visual (tipografía pixel, colores, espaciado) que el resto del Salón de la Fama — no un texto plano sin formato.
+- [x] `/salon`, tab "ASTEROIDES", muestra el top real de `scores` (ordenado de mayor a menor), incluyendo la partida recién guardada tras recargar.
+- [x] `/juego/asteroides` muestra el mismo top real de `scores` que el Salón de la Fama.
+- [x] `best`/`plays` de `asteroides` en Home/Biblioteca reflejan `MAX(score)`/`COUNT(*)` real de `scores` una vez existe al menos una partida guardada; antes de la primera partida, muestran `best_seed`/`plays_seed`.
+- [x] `npm run build` compila sin errores de tipos tras convertir las páginas a Server Components async y actualizar los componentes a recibir props.
+- [x] Ningún otro juego (aparte de `asteroides`) aparece en la tabla `games` de Supabase.
 
 ## Decisiones tomadas y descartadas
 
