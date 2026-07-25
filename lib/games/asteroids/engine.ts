@@ -346,7 +346,16 @@ export class AsteroidsEngine {
   private rafId: number | null = null;
   private running = false;
 
+  private static readonly SCROLL_KEYS = new Set([
+    "ArrowUp",
+    "ArrowDown",
+    "ArrowLeft",
+    "ArrowRight",
+    "Space",
+  ]);
+
   private onKeyDown = (e: KeyboardEvent) => {
+    if (AsteroidsEngine.SCROLL_KEYS.has(e.code)) e.preventDefault();
     if (!this.keys[e.code]) this.justPressed[e.code] = true;
     this.keys[e.code] = true;
   };

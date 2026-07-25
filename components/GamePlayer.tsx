@@ -5,10 +5,19 @@ import { useRouter } from "next/navigation";
 import type { Game } from "@/lib/data";
 import { useAvUser } from "@/lib/useAvUser";
 import { AsteroidsEngine, type AsteroidsEngineState } from "@/lib/games/asteroids/engine";
+import { saveScore as saveScoreRemote } from "@/lib/scores";
 
 const MOCK_FINAL_SCORE = 47280;
 
 const REAL_ENGINE_GAME_IDS = ["asteroides"];
+
+function getSavedPlayerName(): string | null {
+  try {
+    return localStorage.getItem("av_player_name");
+  } catch {
+    return null;
+  }
+}
 
 export default function GamePlayer({ game }: { game: Game }) {
   const router = useRouter();
@@ -37,7 +46,7 @@ export default function GamePlayer({ game }: { game: Game }) {
       onGameOver: (score) => {
         engine.pause();
         setFinalScore(score);
-        setName(displayName);
+        setName(getSavedPlayerName() || displayName);
         setOver(true);
       },
     });
@@ -65,7 +74,7 @@ export default function GamePlayer({ game }: { game: Game }) {
   const endGame = () => {
     engineRef.current?.pause();
     setFinalScore(hasRealEngine ? engineState.score : MOCK_FINAL_SCORE);
-    setName(displayName);
+    setName(getSavedPlayerName() || displayName);
     setOver(true);
   };
 
@@ -77,13 +86,22 @@ export default function GamePlayer({ game }: { game: Game }) {
     setSaved(false);
   };
 
-  const saveScore = () => {
-    try {
-      const all = JSON.parse(localStorage.getItem("av_scores") || "[]");
-      all.push({ game: game.id, score: finalScore, name, at: Date.now() });
-      localStorage.setItem("av_scores", JSON.stringify(all));
-    } catch {
-      // localStorage no disponible
+  const saveScore = async () => {
+    if (hasRealEngine) {
+      await saveScoreRemote(game.id, name, finalScore);
+      try {
+        localStorage.setItem("av_player_name", name);
+      } catch {
+        // localStorage no disponible
+      }
+    } else {
+      try {
+        const all = JSON.parse(localStorage.getItem("av_scores") || "[]");
+        all.push({ game: game.id, score: finalScore, name, at: Date.now() });
+        localStorage.setItem("av_scores", JSON.stringify(all));
+      } catch {
+        // localStorage no disponible
+      }
     }
     setSaved(true);
   };

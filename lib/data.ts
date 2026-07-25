@@ -106,17 +106,6 @@ export const GAMES: Game[] = [
     best: 24,
     plays: "4.2K",
   },
-  {
-    id: "asteroides",
-    title: "ASTEROIDES",
-    short: "Sobrevive en un campo de asteroides sin bordes.",
-    long: "Pilota una nave triangular en un espacio toroidal: los bordes del mapa se envuelven sobre sí mismos. Destruye rocas grandes para que se partan en fragmentos cada vez más pequeños y caza el power-up de disparo triple antes de perder tus tres vidas.",
-    cat: "SHOOTER",
-    cover: "cover-rocas",
-    color: "cyan",
-    best: 62800,
-    plays: "3.9K",
-  },
 ];
 
 export const CATS = ["TODOS", "ARCADE", "PUZZLE", "SHOOTER", "VERSUS"] as const;

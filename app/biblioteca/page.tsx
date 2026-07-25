@@ -1,5 +1,7 @@
 import Library from "@/components/Library";
+import { getAllGames } from "@/lib/games";
 
-export default function BibliotecaPage() {
-  return <Library />;
+export default async function BibliotecaPage() {
+  const games = await getAllGames();
+  return <Library games={games} />;
 }
