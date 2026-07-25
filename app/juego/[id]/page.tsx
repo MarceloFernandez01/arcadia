@@ -1,14 +1,17 @@
 import { notFound } from "next/navigation";
 import GameDetail from "@/components/GameDetail";
-import { GAMES, seededScores } from "@/lib/data";
+import { seededScores } from "@/lib/data";
+import { getGameById } from "@/lib/games";
+import { getTopScores } from "@/lib/scores.server";
 
 export default async function GameDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const game = GAMES.find((g) => g.id === id);
+  const game = await getGameById(id);
 
   if (!game) notFound();
 
-  const scores = seededScores(id.length * 17 + 3, 10);
+  const scores =
+    id === "asteroides" ? await getTopScores(id, 10) : seededScores(id.length * 17 + 3, 10);
 
   return <GameDetail game={game} scores={scores} />;
 }
