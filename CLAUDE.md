@@ -32,6 +32,6 @@ Todos los screenshots tomados con el MCP de Playwright (`browser_take_screenshot
 
 ## Arquitectura
 
-**Implementación real** (App Router, TypeScript), resultado de migrar el prototipo estático siguiendo los specs de `specs/`. Sesión mock (sin backend ni autenticación real) vía `localStorage` (`av_user`, `av_scores`); ver `lib/avUser.ts` / `lib/useAvUser.ts`.
+**Implementación real** (App Router, TypeScript), resultado de migrar el prototipo estático siguiendo los specs de `specs/`. Sesión mock (sin backend ni autenticación real) vía `localStorage` (`av_user`); ver `lib/avUser.ts` / `lib/useAvUser.ts`. El catálogo de juegos y los puntajes viven en Supabase (`lib/games.ts`, `lib/scores.ts`, `lib/scores.server.ts`); no hay data mock de juegos.
 
 **Prototipo de referencia** (`references/templates/`): HTML/JSX estático (React sin build, vía CDN) usado como guía funcional durante la migración. No se importa directamente en la app; sirve solo de referencia visual/funcional (`app.jsx`, `nav.jsx`, `biblioteca.jsx`, `detalle.jsx`, `reproductor.jsx`, `auth.jsx`, `salon.jsx`, `data.jsx`, `styles.css`).

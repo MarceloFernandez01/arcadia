@@ -7,10 +7,6 @@ import { useAvUser } from "@/lib/useAvUser";
 import { AsteroidsEngine, type AsteroidsEngineState } from "@/lib/games/asteroids/engine";
 import { saveScore as saveScoreRemote } from "@/lib/scores";
 
-const MOCK_FINAL_SCORE = 47280;
-
-const REAL_ENGINE_GAME_IDS = ["asteroides"];
-
 function getSavedPlayerName(): string | null {
   try {
     return localStorage.getItem("av_player_name");
@@ -28,7 +24,6 @@ export default function GamePlayer({ game }: { game: Game }) {
   const [name, setName] = useState(displayName);
   const [saved, setSaved] = useState(false);
 
-  const hasRealEngine = REAL_ENGINE_GAME_IDS.includes(game.id);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const engineRef = useRef<AsteroidsEngine | null>(null);
   const [engineState, setEngineState] = useState<AsteroidsEngineState>({
@@ -36,10 +31,10 @@ export default function GamePlayer({ game }: { game: Game }) {
     lives: 3,
     level: 1,
   });
-  const [finalScore, setFinalScore] = useState(MOCK_FINAL_SCORE);
+  const [finalScore, setFinalScore] = useState(0);
 
   useEffect(() => {
-    if (!hasRealEngine || !canvasRef.current) return;
+    if (!canvasRef.current) return;
 
     const engine = new AsteroidsEngine(canvasRef.current, {
       onStateChange: setEngineState,
@@ -57,7 +52,7 @@ export default function GamePlayer({ game }: { game: Game }) {
       engine.destroy();
       engineRef.current = null;
     };
-  }, [hasRealEngine]);
+  }, []);
 
   const togglePause = () => {
     setPaused((p) => {
@@ -73,7 +68,7 @@ export default function GamePlayer({ game }: { game: Game }) {
 
   const endGame = () => {
     engineRef.current?.pause();
-    setFinalScore(hasRealEngine ? engineState.score : MOCK_FINAL_SCORE);
+    setFinalScore(engineState.score);
     setName(getSavedPlayerName() || displayName);
     setOver(true);
   };
@@ -87,21 +82,11 @@ export default function GamePlayer({ game }: { game: Game }) {
   };
 
   const saveScore = async () => {
-    if (hasRealEngine) {
-      await saveScoreRemote(game.id, name, finalScore);
-      try {
-        localStorage.setItem("av_player_name", name);
-      } catch {
-        // localStorage no disponible
-      }
-    } else {
-      try {
-        const all = JSON.parse(localStorage.getItem("av_scores") || "[]");
-        all.push({ game: game.id, score: finalScore, name, at: Date.now() });
-        localStorage.setItem("av_scores", JSON.stringify(all));
-      } catch {
-        // localStorage no disponible
-      }
+    await saveScoreRemote(game.id, name, finalScore);
+    try {
+      localStorage.setItem("av_player_name", name);
+    } catch {
+      // localStorage no disponible
     }
     setSaved(true);
   };
@@ -118,19 +103,15 @@ export default function GamePlayer({ game }: { game: Game }) {
           </div>
           <div className="hud-stat">
             <div className="l">Puntuación</div>
-            <div className="v">{hasRealEngine ? engineState.score : 0}</div>
+            <div className="v">{engineState.score}</div>
           </div>
           <div className="hud-stat lives">
             <div className="l">Vidas</div>
-            <div className="v">
-              {hasRealEngine ? Array(engineState.lives).fill("♥").join(" ") : "♥ ♥ ♥"}
-            </div>
+            <div className="v">{Array(engineState.lives).fill("♥").join(" ")}</div>
           </div>
           <div className="hud-stat level">
             <div className="l">Nivel</div>
-            <div className="v">
-              {(hasRealEngine ? engineState.level : 1).toString().padStart(2, "0")}
-            </div>
+            <div className="v">{engineState.level.toString().padStart(2, "0")}</div>
           </div>
         </div>
         <div className="hud-actions">
@@ -148,17 +129,7 @@ export default function GamePlayer({ game }: { game: Game }) {
 
       <div className="crt">
         <div className="crt-screen">
-          {hasRealEngine ? (
-            <canvas ref={canvasRef} width={800} height={600} className="asteroids-canvas" />
-          ) : (
-            <div className="game-arena">
-              <div className="grid-floor"></div>
-              <div className="enemy e1"></div>
-              <div className="enemy e2"></div>
-              <div className="enemy e3"></div>
-              <div className="player-ship"></div>
-            </div>
-          )}
+          <canvas ref={canvasRef} width={800} height={600} className="asteroids-canvas" />
           {paused && (
             <div className="crt-content" style={{ background: "rgba(0,0,0,0.6)", zIndex: 5 }}>
               <div>

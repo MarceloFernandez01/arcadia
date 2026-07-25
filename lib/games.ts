@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { GAMES, type Game } from "@/lib/data";
+import type { Game } from "@/lib/data";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 interface SupabaseGameRow {
@@ -40,16 +40,6 @@ async function resolveGame(supabase: SupabaseClient, row: SupabaseGameRow): Prom
 export async function getAllGames(): Promise<Game[]> {
   const supabase = await createClient();
   const { data } = await supabase.from("games").select("*");
-  const realGames = await Promise.all(
-    ((data ?? []) as SupabaseGameRow[]).map((row) => resolveGame(supabase, row)),
-  );
-
-  return [...GAMES, ...realGames];
-}
-
-export async function getRealGames(): Promise<Game[]> {
-  const supabase = await createClient();
-  const { data } = await supabase.from("games").select("*");
 
   return Promise.all(((data ?? []) as SupabaseGameRow[]).map((row) => resolveGame(supabase, row)));
 }
@@ -58,9 +48,7 @@ export async function getGameById(id: string): Promise<Game | undefined> {
   const supabase = await createClient();
   const { data } = await supabase.from("games").select("*").eq("id", id).maybeSingle();
 
-  if (data) {
-    return resolveGame(supabase, data as SupabaseGameRow);
-  }
+  if (!data) return undefined;
 
-  return GAMES.find((game) => game.id === id);
+  return resolveGame(supabase, data as SupabaseGameRow);
 }
