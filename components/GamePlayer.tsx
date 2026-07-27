@@ -28,6 +28,7 @@ export default function GamePlayer({ game }: { game: Game }) {
   const registryEntry = GAME_REGISTRY[game.id];
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const secondaryCanvasRef = useRef<HTMLCanvasElement>(null);
   const engineRef = useRef<ArcadeGameEngine | null>(null);
   const [engineState, setEngineState] = useState<EngineState>(registryEntry.initialState);
   const [finalScore, setFinalScore] = useState(0);
@@ -35,15 +36,19 @@ export default function GamePlayer({ game }: { game: Game }) {
   useEffect(() => {
     if (!canvasRef.current) return;
 
-    const engine = registryEntry.create(canvasRef.current, {
-      onStateChange: setEngineState,
-      onGameOver: (score) => {
-        engine.pause();
-        setFinalScore(score);
-        setName(getSavedPlayerName() || displayName);
-        setOver(true);
+    const engine = registryEntry.create(
+      canvasRef.current,
+      {
+        onStateChange: setEngineState,
+        onGameOver: (score) => {
+          engine.pause();
+          setFinalScore(score);
+          setName(getSavedPlayerName() || displayName);
+          setOver(true);
+        },
       },
-    });
+      secondaryCanvasRef.current ?? undefined,
+    );
     engineRef.current = engine;
     engine.start();
 
@@ -130,8 +135,17 @@ export default function GamePlayer({ game }: { game: Game }) {
             ref={canvasRef}
             width={registryEntry.width}
             height={registryEntry.height}
-            className="game-canvas"
+            className={registryEntry.secondaryCanvas ? "game-canvas-fixed" : "game-canvas"}
           />
+          {registryEntry.secondaryCanvas && (
+            <canvas
+              ref={secondaryCanvasRef}
+              width={registryEntry.secondaryCanvas.width}
+              height={registryEntry.secondaryCanvas.height}
+              className="next-piece-canvas"
+              aria-label={registryEntry.secondaryCanvas.label}
+            />
+          )}
           {paused && (
             <div className="crt-content" style={{ background: "rgba(0,0,0,0.6)", zIndex: 5 }}>
               <div>

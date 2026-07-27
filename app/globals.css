@@ -1070,6 +1070,20 @@ a {
   display: block;
 }
 
+.game-canvas-fixed {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  display: block;
+}
+.next-piece-canvas {
+  position: absolute;
+  left: calc(50% + 174px);
+  top: 15%;
+  display: block;
+}
+
 /* game over modal */
 .modal-bd {
   position: fixed;
