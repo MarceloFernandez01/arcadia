@@ -6,13 +6,18 @@ Stack: Next.js 16.2.10 (App Router), React 19.2.4, TypeScript, Tailwind CSS v4.
 
 ## Estado actual
 
-Specs implementadas en `specs/`:
+Specs implementadas en `specs/` (todas con estado "Implementado"):
 
 - `01-mvp-visual.md` — MVP visual: 5 pantallas (Biblioteca, Detalle de juego, Reproductor, Auth, Salón de la Fama) migradas del prototipo estático (`references/templates/`) a rutas reales de App Router, con sesión y puntuaciones mock persistidas en `localStorage`. Sin backend ni lógica de juego real.
 - `02-home-page.md` — página de inicio (`/`) con `components/Home.tsx`; la Biblioteca se movió de `/` a `/biblioteca`.
 - `03-about-page-resend.md` — página "Acerca de" (`/about`) con formulario de contacto que envía correos reales vía Resend desde una API Route (`app/api/contact/route.ts`).
+- `04-integracion-supabase.md` — conexión técnica con Supabase: clientes de navegador y servidor (`lib/supabase/client.ts`, `lib/supabase/server.ts`) vía `@supabase/ssr`, y script de verificación (`scripts/check-supabase.ts`). Sin tablas, sin autenticación real todavía.
+- `05-asteroids-game.md` — juego Asteroids con motor real en TypeScript/Canvas (`lib/games/asteroids/engine.ts`), integrado en `GamePlayer.tsx` con HUD conectado en tiempo real (puntuación, vidas, nivel).
+- `06-leaderboard-supabase.md` — migración del catálogo de juegos y los puntajes a Supabase (tablas `games` y `scores`, `lib/games.ts`, `lib/scores.ts`). El catálogo ya no tiene datos mock: `getAllGames()`, `getGameById()` y el Salón de la Fama (`HallOfFame.tsx`) consultan únicamente Supabase.
 
-Para el envío de correos se necesita un `.env.local` (no versionado) basado en `.env.template`, con `RESEND_API_KEY` y `CONTACT_TO_EMAIL`.
+Sesión de usuario sigue siendo mock (sin autenticación real) vía `localStorage` (`components/Auth.tsx`, `lib/avUser.ts`) — la auth real queda para un spec futuro, junto con la limpieza de puntajes de invitados guardados sin usuario autenticado.
+
+Para el envío de correos se necesita un `.env.local` (no versionado) basado en `.env.template`, con `RESEND_API_KEY` y `CONTACT_TO_EMAIL`. Para la conexión a Supabase se necesitan además `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (el proyecto usa el sistema nuevo de API keys de Supabase, sin anon key clásica).
 
 ## Usa Spec Driven Design
 
