@@ -1,4 +1,5 @@
 import { AsteroidsEngine } from "@/lib/games/asteroids/engine";
+import { TetrisEngine } from "@/lib/games/tetris/engine";
 import type { ArcadeGameEngine, ArcadeGameEngineOptions, EngineState } from "@/lib/games/types";
 
 export interface GameRegistryEntry {
@@ -37,6 +38,24 @@ export const GAME_REGISTRY: Record<string, GameRegistryEntry> = {
         },
         onGameOver: options.onGameOver,
       });
+    },
+  },
+  tetris: {
+    width: 300,
+    height: 600,
+    secondaryCanvas: { width: 120, height: 120, label: "Siguiente" },
+    initialState: {
+      score: 0,
+      stats: [
+        { key: "lines", label: "Líneas", value: "0" },
+        { key: "level", label: "Nivel", value: "01" },
+      ],
+    },
+    create(canvas, options, secondaryCanvas) {
+      if (!secondaryCanvas) {
+        throw new Error("Tetris requiere un canvas secundario para la pieza siguiente");
+      }
+      return new TetrisEngine(canvas, secondaryCanvas, options);
     },
   },
 };
