@@ -1062,7 +1062,7 @@ a {
   box-shadow: 0 0 6px var(--green);
 }
 
-.asteroids-canvas {
+.game-canvas {
   position: absolute;
   inset: 0;
   width: 100%;

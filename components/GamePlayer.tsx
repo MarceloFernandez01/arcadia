@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Game } from "@/lib/data";
 import { useAvUser } from "@/lib/useAvUser";
-import { AsteroidsEngine, type AsteroidsEngineState } from "@/lib/games/asteroids/engine";
+import { GAME_REGISTRY } from "@/lib/games/registry";
+import type { ArcadeGameEngine, EngineState } from "@/lib/games/types";
 import { saveScore as saveScoreRemote } from "@/lib/scores";
 
 function getSavedPlayerName(): string | null {
@@ -24,19 +25,17 @@ export default function GamePlayer({ game }: { game: Game }) {
   const [name, setName] = useState(displayName);
   const [saved, setSaved] = useState(false);
 
+  const registryEntry = GAME_REGISTRY[game.id];
+
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const engineRef = useRef<AsteroidsEngine | null>(null);
-  const [engineState, setEngineState] = useState<AsteroidsEngineState>({
-    score: 0,
-    lives: 3,
-    level: 1,
-  });
+  const engineRef = useRef<ArcadeGameEngine | null>(null);
+  const [engineState, setEngineState] = useState<EngineState>(registryEntry.initialState);
   const [finalScore, setFinalScore] = useState(0);
 
   useEffect(() => {
     if (!canvasRef.current) return;
 
-    const engine = new AsteroidsEngine(canvasRef.current, {
+    const engine = registryEntry.create(canvasRef.current, {
       onStateChange: setEngineState,
       onGameOver: (score) => {
         engine.pause();
@@ -105,14 +104,12 @@ export default function GamePlayer({ game }: { game: Game }) {
             <div className="l">Puntuación</div>
             <div className="v">{engineState.score}</div>
           </div>
-          <div className="hud-stat lives">
-            <div className="l">Vidas</div>
-            <div className="v">{Array(engineState.lives).fill("♥").join(" ")}</div>
-          </div>
-          <div className="hud-stat level">
-            <div className="l">Nivel</div>
-            <div className="v">{engineState.level.toString().padStart(2, "0")}</div>
-          </div>
+          {engineState.stats.map((stat) => (
+            <div className={`hud-stat ${stat.key}`} key={stat.key}>
+              <div className="l">{stat.label}</div>
+              <div className="v">{stat.value}</div>
+            </div>
+          ))}
         </div>
         <div className="hud-actions">
           <button className="btn yellow" onClick={togglePause}>
@@ -129,7 +126,12 @@ export default function GamePlayer({ game }: { game: Game }) {
 
       <div className="crt">
         <div className="crt-screen">
-          <canvas ref={canvasRef} width={800} height={600} className="asteroids-canvas" />
+          <canvas
+            ref={canvasRef}
+            width={registryEntry.width}
+            height={registryEntry.height}
+            className="game-canvas"
+          />
           {paused && (
             <div className="crt-content" style={{ background: "rgba(0,0,0,0.6)", zIndex: 5 }}>
               <div>
