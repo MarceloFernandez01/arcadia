@@ -1,6 +1,6 @@
 # SPEC 07 — Juego Tetris
 
-> **Estado:** Aprobado
+> **Estado:** Implementado
 > **Depende de:** SPEC 05 (asteroids-game), SPEC 06 (leaderboard-supabase)
 > **Fecha:** 2026-07-26
 > **Objetivo:** Adaptar el Tetris de referencia (`references/started-games/03-tetris`) como motor real en TypeScript/Canvas bajo el id `tetris`, introduciendo un punto de extensión (`lib/games/registry.ts`) en `GamePlayer.tsx` para que futuros juegos no requieran modificarlo, y dar de alta el juego en Supabase para que aparezca en el Salón de la Fama.
@@ -138,23 +138,23 @@ values (
 
 ## Criterios de aceptación
 
-- [ ] Existe `lib/games/types.ts` con `ArcadeGameEngine`/`ArcadeGameEngineOptions`/`EngineState`/`EngineHudStat`, y `lib/games/registry.ts` con las entradas `asteroides` y `tetris`.
-- [ ] `GamePlayer.tsx` resuelve el motor, dimensiones del canvas y stats del HUD vía `GAME_REGISTRY[game.id]`, sin ninguna rama de código específica de `asteroides` o `tetris`.
-- [ ] `/jugar/asteroides` sigue funcionando exactamente igual que antes del refactor (canvas 800×600, HUD Puntuación/Vidas/Nivel, pausa, fin, guardado de puntaje).
-- [ ] Existe una fila `tetris` en `games` (Supabase) con los valores acordados (`cat: 'PUZZLE'`, `color: 'magenta'`, `cover: 'cover-tetro'`, `best_seed: 0`, `plays_seed: '0'`).
-- [ ] `/jugar/tetris` renderiza el canvas principal (300×600) centrado horizontalmente dentro de `.crt-screen`, y el canvas secundario de "siguiente pieza" (120×120) a la derecha, sin alinearse verticalmente con el principal.
-- [ ] El HUD de React refleja en tiempo real Puntuación, Líneas y Nivel del motor de Tetris (no valores fijos).
-- [ ] Mover (`←`/`→`), rotar (`↑`/`X` con wall kicks), soft drop (`↓`) y hard drop (`Espacio`) funcionan igual que en `game.js`; la pieza fantasma se dibuja en el canvas principal.
-- [ ] El canvas secundario se actualiza para mostrar la próxima pieza cada vez que la pieza actual cambia.
-- [ ] Al completar líneas, `lines`/`score`/`level` se actualizan según las mismas fórmulas del original (`LINE_SCORES` × nivel, nivel = `floor(lines/10) + 1`, velocidad de caída correspondiente).
-- [ ] PAUSA/REANUDAR detiene y reactiva el loop del motor sin saltos de física ni overlay interno del canvas.
-- [ ] FIN congela el motor sin marcar game over y abre el modal existente con el puntaje real acumulado.
-- [ ] Cuando una pieza nueva no entra al tablero (`spawn()` colisiona), se invoca `onGameOver` y se abre automáticamente el mismo modal de fin de partida con el puntaje real, sin que el canvas dibuje su propio overlay de "GAME OVER".
-- [ ] "GUARDAR PUNTUACIÓN" inserta una fila en `scores` con `game_id: "tetris"`, `user_id: null`, `score` real.
-- [ ] "JUGAR DE NUEVO" reinicia una instancia nueva del motor (tablero vacío, score 0, líneas 0, nivel 1).
-- [ ] Tetris aparece como tab nuevo en `/salon` (sin tocar código de `HallOfFame.tsx`) y su top coincide con el mostrado en `/juego/tetris`.
-- [ ] Salir del juego (botón "SALIR" o navegar fuera de `/jugar/tetris`) cancela el `requestAnimationFrame` y remueve los listeners de teclado del motor de Tetris.
-- [ ] `npm run build` compila sin errores de tipos.
+- [x] Existe `lib/games/types.ts` con `ArcadeGameEngine`/`ArcadeGameEngineOptions`/`EngineState`/`EngineHudStat`, y `lib/games/registry.ts` con las entradas `asteroides` y `tetris`.
+- [x] `GamePlayer.tsx` resuelve el motor, dimensiones del canvas y stats del HUD vía `GAME_REGISTRY[game.id]`, sin ninguna rama de código específica de `asteroides` o `tetris`.
+- [x] `/jugar/asteroides` sigue funcionando exactamente igual que antes del refactor (canvas 800×600, HUD Puntuación/Vidas/Nivel, pausa, fin, guardado de puntaje).
+- [x] Existe una fila `tetris` en `games` (Supabase) con los valores acordados (`cat: 'PUZZLE'`, `color: 'magenta'`, `cover: 'cover-tetro'`, `best_seed: 0`, `plays_seed: '0'`).
+- [x] `/jugar/tetris` renderiza el canvas principal (300×600) centrado horizontalmente dentro de `.crt-screen`, y el canvas secundario de "siguiente pieza" (120×120) a la derecha, sin alinearse verticalmente con el principal.
+- [x] El HUD de React refleja en tiempo real Puntuación, Líneas y Nivel del motor de Tetris (no valores fijos).
+- [x] Mover (`←`/`→`), rotar (`↑`/`X` con wall kicks), soft drop (`↓`) y hard drop (`Espacio`) funcionan igual que en `game.js`; la pieza fantasma se dibuja en el canvas principal.
+- [x] El canvas secundario se actualiza para mostrar la próxima pieza cada vez que la pieza actual cambia.
+- [x] Al completar líneas, `lines`/`score`/`level` se actualizan según las mismas fórmulas del original (`LINE_SCORES` × nivel, nivel = `floor(lines/10) + 1`, velocidad de caída correspondiente).
+- [x] PAUSA/REANUDAR detiene y reactiva el loop del motor sin saltos de física ni overlay interno del canvas.
+- [x] FIN congela el motor sin marcar game over y abre el modal existente con el puntaje real acumulado.
+- [x] Cuando una pieza nueva no entra al tablero (`spawn()` colisiona), se invoca `onGameOver` y se abre automáticamente el mismo modal de fin de partida con el puntaje real, sin que el canvas dibuje su propio overlay de "GAME OVER".
+- [x] "GUARDAR PUNTUACIÓN" inserta una fila en `scores` con `game_id: "tetris"`, `user_id: null`, `score` real.
+- [x] "JUGAR DE NUEVO" reinicia una instancia nueva del motor (tablero vacío, score 0, líneas 0, nivel 1).
+- [x] Tetris aparece como tab nuevo en `/salon` (sin tocar código de `HallOfFame.tsx`) y su top coincide con el mostrado en `/juego/tetris`.
+- [x] Salir del juego (botón "SALIR" o navegar fuera de `/jugar/tetris`) cancela el `requestAnimationFrame` y remueve los listeners de teclado del motor de Tetris.
+- [x] `npm run build` compila sin errores de tipos.
 
 ## Decisiones tomadas y descartadas
 
