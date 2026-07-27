@@ -17,6 +17,9 @@ Plataforma para jugar online y competir por puntos. El desarrollo sigue Spec Dri
 - `01-mvp-visual.md` — MVP visual (sin backend ni lógica de juego real), base de `app/`, `components/` y `lib/`.
 - `02-home-page.md` — página de inicio (`/`) con `components/Home.tsx`, y movió la Biblioteca (grilla de juegos) de `/` a `/biblioteca`.
 - `03-about-page-resend.md` — página "Acerca de" (`/about`) con formulario de contacto que envía correos reales vía Resend a través de una API Route.
+- `04-integracion-supabase.md` — conexión técnica con Supabase (clientes `lib/supabase/client.ts` y `lib/supabase/server.ts` vía `@supabase/ssr`), sin tablas ni autenticación real todavía.
+- `05-asteroids-game.md` — juego Asteroids con motor real en TypeScript/Canvas (`lib/games/asteroids/engine.ts`), integrado en `GamePlayer.tsx`.
+- `06-leaderboard-supabase.md` — migración del catálogo de juegos y los puntajes a Supabase (tablas `games`/`scores`); el catálogo mock de `lib/data.ts` se eliminó por completo.
 
 ## Skills
 
