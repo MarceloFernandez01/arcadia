@@ -20,6 +20,7 @@ export class SnakeEngine implements ArcadeGameEngine {
 
   private snakeBody!: Segment[];
   private direction!: Direction;
+  private nextDirection: Direction | null = null;
   private score = 0;
   private gameOver = false;
   private tickAccum = 0;
@@ -30,11 +31,33 @@ export class SnakeEngine implements ArcadeGameEngine {
   private rafId: number | null = null;
   private running = false;
 
+  private static readonly KEY_DIRECTIONS: Record<string, Direction> = {
+    ArrowUp: { x: 0, y: -1 },
+    ArrowDown: { x: 0, y: 1 },
+    ArrowLeft: { x: -1, y: 0 },
+    ArrowRight: { x: 1, y: 0 },
+    KeyW: { x: 0, y: -1 },
+    KeyS: { x: 0, y: 1 },
+    KeyA: { x: -1, y: 0 },
+    KeyD: { x: 1, y: 0 },
+  };
+
+  private onKeyDown = (e: KeyboardEvent) => {
+    const candidate = SnakeEngine.KEY_DIRECTIONS[e.code];
+    if (!candidate) return;
+    e.preventDefault();
+    if (this.gameOver) return;
+    if (candidate.x === -this.direction.x && candidate.y === -this.direction.y) return;
+    this.nextDirection = candidate;
+  };
+
   constructor(canvas: HTMLCanvasElement, options: ArcadeGameEngineOptions) {
     const ctx = canvas.getContext("2d");
     if (!ctx) throw new Error("No se pudo obtener el contexto 2D del canvas");
     this.ctx = ctx;
     this.options = options;
+
+    window.addEventListener("keydown", this.onKeyDown);
 
     this.initGame();
   }
@@ -69,6 +92,7 @@ export class SnakeEngine implements ArcadeGameEngine {
 
   destroy() {
     this.pause();
+    window.removeEventListener("keydown", this.onKeyDown);
   }
 
   private initGame() {
@@ -76,6 +100,7 @@ export class SnakeEngine implements ArcadeGameEngine {
     const startY = Math.floor(ROWS / 2);
     this.snakeBody = [{ x: startX, y: startY }];
     this.direction = { x: 1, y: 0 };
+    this.nextDirection = null;
     this.score = 0;
     this.gameOver = false;
     this.tickAccum = 0;
@@ -101,10 +126,35 @@ export class SnakeEngine implements ArcadeGameEngine {
   }
 
   private step() {
+    if (this.nextDirection) {
+      const candidate = this.nextDirection;
+      this.nextDirection = null;
+      if (candidate.x !== -this.direction.x || candidate.y !== -this.direction.y) {
+        this.direction = candidate;
+      }
+    }
+
     const head = this.snakeBody[0];
-    const newHead: Segment = { x: head.x + this.direction.x, y: head.y + this.direction.y };
+    const newHead: Segment = {
+      x: (head.x + this.direction.x + COLS) % COLS,
+      y: (head.y + this.direction.y + ROWS) % ROWS,
+    };
+
+    const bodyWithoutTail = this.snakeBody.slice(0, -1);
+    if (bodyWithoutTail.some((s) => s.x === newHead.x && s.y === newHead.y)) {
+      this.endGame();
+      return;
+    }
+
     this.snakeBody.unshift(newHead);
     this.snakeBody.pop();
+  }
+
+  private endGame() {
+    this.gameOver = true;
+    this.pause();
+    this.notifyStateChange();
+    this.options.onGameOver(this.score);
   }
 
   private drawGrid() {
