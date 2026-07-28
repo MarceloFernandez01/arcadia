@@ -1,3 +1,4 @@
+import { ArkanoidEngine } from "@/lib/games/arkanoid/engine";
 import { AsteroidsEngine } from "@/lib/games/asteroids/engine";
 import { TetrisEngine } from "@/lib/games/tetris/engine";
 import type { ArcadeGameEngine, ArcadeGameEngineOptions, EngineState } from "@/lib/games/types";
@@ -6,6 +7,7 @@ export interface GameRegistryEntry {
   width: number;
   height: number;
   secondaryCanvas?: { width: number; height: number; label: string };
+  colorSchemes?: { id: string; label: string }[];
   initialState: EngineState;
   create(
     canvas: HTMLCanvasElement,
@@ -44,6 +46,12 @@ export const GAME_REGISTRY: Record<string, GameRegistryEntry> = {
     width: 300,
     height: 600,
     secondaryCanvas: { width: 120, height: 120, label: "Siguiente" },
+    colorSchemes: [
+      { id: "retro", label: "Retro" },
+      { id: "normal", label: "Normal" },
+      { id: "pastel", label: "Pastel" },
+      { id: "neon", label: "Neón" },
+    ],
     initialState: {
       score: 0,
       stats: [
@@ -56,6 +64,20 @@ export const GAME_REGISTRY: Record<string, GameRegistryEntry> = {
         throw new Error("Tetris requiere un canvas secundario para la pieza siguiente");
       }
       return new TetrisEngine(canvas, secondaryCanvas, options);
+    },
+  },
+  arkanoid: {
+    width: 800,
+    height: 600,
+    initialState: {
+      score: 0,
+      stats: [
+        { key: "lives", label: "Vidas", value: "♥ ♥ ♥" },
+        { key: "level", label: "Nivel", value: "01" },
+      ],
+    },
+    create(canvas, options) {
+      return new ArkanoidEngine(canvas, options);
     },
   },
 };

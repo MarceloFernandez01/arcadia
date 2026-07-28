@@ -983,6 +983,21 @@ a {
   gap: 10px;
 }
 
+.scheme-select {
+  padding: 6px 10px;
+  font-family: var(--pixel);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  color: var(--cyan);
+  cursor: pointer;
+}
+.scheme-select:focus {
+  outline: none;
+  border-color: var(--cyan);
+}
+
 .crt {
   position: relative;
   border-radius: 28px;

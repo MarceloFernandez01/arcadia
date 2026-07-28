@@ -16,6 +16,14 @@ function getSavedPlayerName(): string | null {
   }
 }
 
+function getStoredColorScheme(gameId: string): string | null {
+  try {
+    return localStorage.getItem(`av_color_scheme_${gameId}`);
+  } catch {
+    return null;
+  }
+}
+
 export default function GamePlayer({ game }: { game: Game }) {
   const router = useRouter();
   const user = useAvUser();
@@ -32,6 +40,12 @@ export default function GamePlayer({ game }: { game: Game }) {
   const engineRef = useRef<ArcadeGameEngine | null>(null);
   const [engineState, setEngineState] = useState<EngineState>(registryEntry.initialState);
   const [finalScore, setFinalScore] = useState(0);
+  const [colorScheme, setColorScheme] = useState(registryEntry.colorSchemes?.[0]?.id);
+
+  useEffect(() => {
+    const stored = getStoredColorScheme(game.id);
+    if (stored) setColorScheme(stored);
+  }, [game.id]);
 
   useEffect(() => {
     if (!canvasRef.current) return;
@@ -46,6 +60,7 @@ export default function GamePlayer({ game }: { game: Game }) {
           setName(getSavedPlayerName() || displayName);
           setOver(true);
         },
+        initialColorScheme: getStoredColorScheme(game.id) ?? undefined,
       },
       secondaryCanvasRef.current ?? undefined,
     );
@@ -57,6 +72,16 @@ export default function GamePlayer({ game }: { game: Game }) {
       engineRef.current = null;
     };
   }, []);
+
+  const changeColorScheme = (id: string) => {
+    setColorScheme(id);
+    engineRef.current?.setColorScheme?.(id);
+    try {
+      localStorage.setItem(`av_color_scheme_${game.id}`, id);
+    } catch {
+      // localStorage no disponible
+    }
+  };
 
   const togglePause = () => {
     setPaused((p) => {
@@ -116,6 +141,22 @@ export default function GamePlayer({ game }: { game: Game }) {
             </div>
           ))}
         </div>
+        {registryEntry.colorSchemes && (
+          <div className="hud-stat">
+            <div className="l">Esquema</div>
+            <select
+              className="scheme-select"
+              value={colorScheme}
+              onChange={(e) => changeColorScheme(e.target.value)}
+            >
+              {registryEntry.colorSchemes.map((scheme) => (
+                <option key={scheme.id} value={scheme.id}>
+                  {scheme.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
         <div className="hud-actions">
           <button className="btn yellow" onClick={togglePause}>
             {paused ? "REANUDAR" : "PAUSA"}
