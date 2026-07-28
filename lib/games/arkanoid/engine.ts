@@ -53,6 +53,7 @@ export class ArkanoidEngine implements ArcadeGameEngine {
 
   private bounceSound = new Audio("/games/arkanoid/sounds/ball-bounce.mp3");
   private breakSound = new Audio("/games/arkanoid/sounds/break-sound.mp3");
+  private static readonly BREAK_SOUND_VOLUME = 0.4;
   private playingSounds = new Set<HTMLAudioElement>();
 
   private lastTime: number | null = null;
@@ -83,6 +84,7 @@ export class ArkanoidEngine implements ArcadeGameEngine {
     this.canvas = canvas;
     this.ctx = ctx;
     this.options = options;
+    this.breakSound.volume = ArkanoidEngine.BREAK_SOUND_VOLUME;
 
     canvas.addEventListener("mousemove", this.onMouseMove);
     window.addEventListener("keydown", this.onKeyDown);
@@ -138,6 +140,7 @@ export class ArkanoidEngine implements ArcadeGameEngine {
 
   private playSound(base: HTMLAudioElement) {
     const clone = base.cloneNode() as HTMLAudioElement;
+    clone.volume = base.volume;
     this.playingSounds.add(clone);
     clone.addEventListener("ended", () => this.playingSounds.delete(clone));
     clone.play().catch(() => {});
