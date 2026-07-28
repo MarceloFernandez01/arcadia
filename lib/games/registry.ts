@@ -1,5 +1,6 @@
 import { ArkanoidEngine } from "@/lib/games/arkanoid/engine";
 import { AsteroidsEngine } from "@/lib/games/asteroids/engine";
+import { SnakeEngine } from "@/lib/games/snake/engine";
 import { TetrisEngine } from "@/lib/games/tetris/engine";
 import type { ArcadeGameEngine, ArcadeGameEngineOptions, EngineState } from "@/lib/games/types";
 
@@ -78,6 +79,17 @@ export const GAME_REGISTRY: Record<string, GameRegistryEntry> = {
     },
     create(canvas, options) {
       return new ArkanoidEngine(canvas, options);
+    },
+  },
+  snake: {
+    width: 600,
+    height: 600,
+    initialState: {
+      score: 0,
+      stats: [{ key: "length", label: "Longitud", value: "1" }],
+    },
+    create(canvas, options) {
+      return new SnakeEngine(canvas, options);
     },
   },
 };
