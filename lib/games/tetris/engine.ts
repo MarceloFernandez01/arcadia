@@ -5,17 +5,60 @@ const ROWS = 20;
 const BLOCK = 30;
 const NEXT_BLOCK = 30;
 
-const COLORS: (string | null)[] = [
-  null,
-  "#4dd0e1", // I - cyan
-  "#ffd54f", // O - amarillo
-  "#ba68c8", // T - púrpura
-  "#81c784", // S - verde
-  "#e57373", // Z - rojo
-  "#90caf9", // J - celeste
-  "#ffb74d", // L - naranja
-  "#9e9e9e", // N - tuerca (gris metálico)
-];
+export type TetrisColorScheme = "retro" | "normal" | "pastel" | "neon";
+
+const COLOR_SCHEMES: Record<TetrisColorScheme, (string | null)[]> = {
+  retro: [
+    null,
+    "#4dd0e1", // I - cyan
+    "#ffd54f", // O - amarillo
+    "#ba68c8", // T - púrpura
+    "#81c784", // S - verde
+    "#e57373", // Z - rojo
+    "#90caf9", // J - celeste
+    "#ffb74d", // L - naranja
+    "#9e9e9e", // N - tuerca (gris metálico)
+  ],
+  normal: [
+    null,
+    "#00f0f0", // I - cyan
+    "#f0f000", // O - amarillo
+    "#a000f0", // T - púrpura
+    "#00f000", // S - verde
+    "#f00000", // Z - rojo
+    "#0000f0", // J - azul
+    "#f0a000", // L - naranja
+    "#808080", // N - tuerca (gris)
+  ],
+  pastel: [
+    null,
+    "#a8e6ef",
+    "#fff2b2",
+    "#d9b3e6",
+    "#b8e6c2",
+    "#f4b8b8",
+    "#b3d1f5",
+    "#f7d0a3",
+    "#cfd4d9",
+  ],
+  neon: [
+    null,
+    "#00fff9",
+    "#faff00",
+    "#ff00f7",
+    "#00ff5e",
+    "#ff0040",
+    "#0080ff",
+    "#ff9d00",
+    "#c400ff",
+  ],
+};
+
+const COLOR_SCHEME_STORAGE_KEY = "av_color_scheme_tetris";
+
+function isColorScheme(value: string | null): value is TetrisColorScheme {
+  return value === "retro" || value === "normal" || value === "pastel" || value === "neon";
+}
 
 const PIECES: (number[][] | null)[] = [
   null,
@@ -85,6 +128,7 @@ export class TetrisEngine implements ArcadeGameEngine {
   private dropAccum = 0;
   private dropInterval = 1000;
   private lastNotified: EngineState | null = null;
+  private colorScheme: TetrisColorScheme;
 
   private lastTime: number | null = null;
   private rafId: number | null = null;
@@ -137,6 +181,11 @@ export class TetrisEngine implements ArcadeGameEngine {
     this.nextCtx = nextCtx;
     this.options = options;
 
+    const stored = isColorScheme(options.initialColorScheme ?? null)
+      ? (options.initialColorScheme as TetrisColorScheme)
+      : this.readStoredColorScheme();
+    this.colorScheme = stored ?? "retro";
+
     window.addEventListener("keydown", this.onKeyDown);
 
     this.initGame();
@@ -173,6 +222,27 @@ export class TetrisEngine implements ArcadeGameEngine {
   destroy() {
     this.pause();
     window.removeEventListener("keydown", this.onKeyDown);
+  }
+
+  setColorScheme(scheme: string) {
+    if (!isColorScheme(scheme)) return;
+    this.colorScheme = scheme;
+    try {
+      localStorage.setItem(COLOR_SCHEME_STORAGE_KEY, scheme);
+    } catch {
+      // localStorage no disponible
+    }
+    this.draw();
+    this.drawNext();
+  }
+
+  private readStoredColorScheme(): TetrisColorScheme | null {
+    try {
+      const value = localStorage.getItem(COLOR_SCHEME_STORAGE_KEY);
+      return isColorScheme(value) ? value : null;
+    } catch {
+      return null;
+    }
   }
 
   private notifyStateChange() {
@@ -330,9 +400,15 @@ export class TetrisEngine implements ArcadeGameEngine {
     alpha?: number,
   ) {
     if (!colorIndex) return;
+    const color = COLOR_SCHEMES[this.colorScheme][colorIndex] as string;
     context.globalAlpha = alpha ?? 1;
-    context.fillStyle = COLORS[colorIndex] as string;
+    if (this.colorScheme === "neon") {
+      context.shadowColor = color;
+      context.shadowBlur = 12;
+    }
+    context.fillStyle = color;
     context.fillRect(x * size + 1, y * size + 1, size - 2, size - 2);
+    context.shadowBlur = 0;
     context.fillStyle = "rgba(255,255,255,0.12)";
     context.fillRect(x * size + 1, y * size + 1, size - 2, 4);
     context.globalAlpha = 1;

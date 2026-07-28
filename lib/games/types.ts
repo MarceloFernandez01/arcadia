@@ -12,6 +12,7 @@ export interface EngineState {
 export interface ArcadeGameEngineOptions {
   onStateChange: (state: EngineState) => void;
   onGameOver: (finalScore: number) => void;
+  initialColorScheme?: string;
 }
 
 export interface ArcadeGameEngine {
@@ -20,4 +21,5 @@ export interface ArcadeGameEngine {
   resume(): void;
   restart(): void;
   destroy(): void;
+  setColorScheme?(scheme: string): void;
 }

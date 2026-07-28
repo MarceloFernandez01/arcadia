@@ -6,6 +6,7 @@ export interface GameRegistryEntry {
   width: number;
   height: number;
   secondaryCanvas?: { width: number; height: number; label: string };
+  colorSchemes?: { id: string; label: string }[];
   initialState: EngineState;
   create(
     canvas: HTMLCanvasElement,
@@ -44,6 +45,12 @@ export const GAME_REGISTRY: Record<string, GameRegistryEntry> = {
     width: 300,
     height: 600,
     secondaryCanvas: { width: 120, height: 120, label: "Siguiente" },
+    colorSchemes: [
+      { id: "retro", label: "Retro" },
+      { id: "normal", label: "Normal" },
+      { id: "pastel", label: "Pastel" },
+      { id: "neon", label: "Neón" },
+    ],
     initialState: {
       score: 0,
       stats: [
