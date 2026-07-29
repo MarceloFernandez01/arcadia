@@ -19,11 +19,20 @@ Plataforma para jugar online y competir por puntos. El desarrollo sigue Spec Dri
 - `03-about-page-resend.md` — página "Acerca de" (`/about`) con formulario de contacto que envía correos reales vía Resend a través de una API Route.
 - `04-integracion-supabase.md` — conexión técnica con Supabase (clientes `lib/supabase/client.ts` y `lib/supabase/server.ts` vía `@supabase/ssr`), sin tablas ni autenticación real todavía.
 - `05-asteroids-game.md` — juego Asteroids con motor real en TypeScript/Canvas (`lib/games/asteroids/engine.ts`), integrado en `GamePlayer.tsx`.
-- `06-leaderboard-supabase.md` — migración del catálogo de juegos y los puntajes a Supabase (tablas `games`/`scores`); el catálogo mock de `lib/data.ts` se eliminó por completo.
+- `06-leaderboard-supabase.md` — migración del catálogo de juegos y los puntajes a Supabase (tablas `games`/`scores`); el catálogo mock de `lib/data.ts` se eliminó (el archivo se conserva solo con los tipos `Game`/`ScoreRow` y la constante `CATS`).
+- `07-tetris-game.md` — juego Tetris (`lib/games/tetris/engine.ts`, con canvas secundario de "siguiente pieza"); introdujo el punto de extensión `lib/games/types.ts` + `lib/games/registry.ts` (ver "Motores de juego" en Arquitectura) y dejó `GamePlayer.tsx` completamente genérico.
+- `08-arkanoid-game.md` — juego Arkanoid (`lib/games/arkanoid/engine.ts`, `levels.ts`, `spritesheet.ts`), con assets en `public/games/arkanoid/`.
+- `09-snake-game.md` — juego Snake (`lib/games/snake/engine.ts`, `fruits.ts`), con wrap-around en los bordes y frutas del atlas retro.
 
 ## Skills
 
-Se debe usar siempre /frontend-desing para diseñar la interfaz de usuario.
+Se debe usar siempre `/frontend-design` para diseñar la interfaz de usuario.
+
+Flujo de Spec Driven Design (skills globales en `~/.claude/skills/`):
+
+- `/spec` — genera specs sección por sección con confirmación del usuario, sin escribir código.
+- `/spec-impl` — implementa un spec ya aprobado.
+- `/add-game` (skill de proyecto en `.claude/skills/add-game/SKILL.md`) — genera el spec de un juego nuevo con leaderboard (`specs/NN-<slug>.md`) siguiendo el patrón de los specs 05–09; no escribe código, no toca Supabase ni ejecuta migraciones.
 
 ## Dev server
 
@@ -37,4 +46,31 @@ Todos los screenshots tomados con el MCP de Playwright (`browser_take_screenshot
 
 **Implementación real** (App Router, TypeScript), resultado de migrar el prototipo estático siguiendo los specs de `specs/`. Sesión mock (sin backend ni autenticación real) vía `localStorage` (`av_user`); ver `lib/avUser.ts` / `lib/useAvUser.ts`. El catálogo de juegos y los puntajes viven en Supabase (`lib/games.ts`, `lib/scores.ts`, `lib/scores.server.ts`); no hay data mock de juegos.
 
+### Motores de juego
+
+Punto de extensión introducido en el SPEC 07, usado por los juegos actuales y futuros a implementar (Asteroids, Tetris, Arkanoid, Snake y más):
+
+- `lib/games/types.ts` define la interfaz común `ArcadeGameEngine` (`start()/pause()/resume()/restart()/destroy()`, opcional `setColorScheme()`) y el estado de HUD flexible `EngineState` (`{ score, stats: { key, label, value }[] }`).
+- `lib/games/registry.ts` es el mapa `id → { width, height, secondaryCanvas?, colorSchemes?, initialState, create() }` que resuelve cada motor.
+- `components/GamePlayer.tsx` es genérico: instancia el motor a través del registry según `game.id`, renderiza el HUD desde `engineState.stats`, agrega el canvas secundario cuando la entrada lo declara (hoy solo Tetris) y el selector de esquema de color cuando hay `colorSchemes` (hoy solo Tetris). **No debe volver a hardcodear un motor específico.**
+- Convención para un juego nuevo: motor en `lib/games/<id>/engine.ts`, assets propios en `public/games/<id>/`, portada en una clase `.cover-<slug>` de `app/globals.css`, canvas con clase `game-canvas` (o `game-canvas-fixed` si hay canvas secundario). El motor nunca dibuja sus propios overlays de "GAME OVER"/"PAUSA"; dispara `onGameOver(finalScore)` y React controla pausa/modal.
+- La skill `/add-game` describe este mismo patrón en detalle y lo usa para generar specs de juegos nuevos.
+
+### Supabase y migraciones
+
+- MCP de Supabase configurado en `.mcp.json` (proyecto `hcfjfjfqvnzwisurvbiz`); las migraciones se aplican con la tool `apply_migration` del MCP, nunca a mano.
+- Migraciones versionadas en `supabase/migrations/`: `001_games_and_scores.sql` define el esquema y las políticas RLS; cada juego agrega solo su propio seed (`002_seed_tetris.sql`, `003_seed_arkanoid.sql`, `004_seed_snake.sql`). Un juego nuevo no debe tocar `001` ni las políticas existentes.
+- El seed de un juego se aplica antes de escribir su motor: eso deja el juego visible en `/biblioteca` y `/salon` desde el inicio, aunque todavía no sea jugable.
+- `npx tsx scripts/check-supabase.ts` valida la conexión usando las variables de `.env.local` (plantilla en `.env.template`).
+
+### Formato y calidad
+
+- Hook `PostToolUse` (`.claude/settings.json` → `.claude/hooks/format-file.ps1`) corre automáticamente `prettier --write` y `eslint --fix` sobre cada archivo escrito o editado; no hace falta formatear a mano. Excluye `node_modules/`, `.next/`, `references/`, `out/`, `build/`.
+- Config de Prettier en `.prettierrc.json` (`printWidth: 100`, comillas dobles, `trailingComma: all`).
+- `npm run build` es la verificación de tipos obligatoria antes de cerrar un spec; también hay `npm run lint` y `npm run format`.
+
 **Prototipo de referencia** (`references/templates/`): HTML/JSX estático (React sin build, vía CDN) usado como guía funcional durante la migración. No se importa directamente en la app; sirve solo de referencia visual/funcional (`app.jsx`, `nav.jsx`, `biblioteca.jsx`, `detalle.jsx`, `reproductor.jsx`, `auth.jsx`, `salon.jsx`, `data.jsx`, `styles.css`).
+
+**Código fuente de los juegos portados** (`references/started-games/`): JS original de cada juego antes de portarlo a TypeScript/Canvas (`02-asteroids`, `03-tetris`, `04-arkanoid`), fuente de verdad para nuevos ports vía `/add-game`.
+
+**Assets crudos** (`references/assest-source/`): recursos gráficos sin procesar usados como base de un motor (ej. `snake-assets/`).
