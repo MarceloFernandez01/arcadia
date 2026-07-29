@@ -1,6 +1,6 @@
 # SPEC 08 — Juego Arkanoid
 
-> **Estado:** Aprobado
+> **Estado:** Implementado
 > **Depende de:** SPEC 05 (asteroids-game), SPEC 06 (leaderboard-supabase), SPEC 07 (tetris-game)
 > **Fecha:** 2026-07-28
 > **Objetivo:** Adaptar el Arkanoid de referencia (`references/started-games/04-arkanoid`) como motor real en TypeScript/Canvas bajo el id `arkanoid`, dando de alta el juego en el `lib/games/registry.ts` existente y en Supabase para que aparezca en el Salón de la Fama.
