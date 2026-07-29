@@ -1,8 +1,15 @@
+import { FRUITS, getFruitSheet, loadFruitSheet } from "@/lib/games/snake/fruits";
 import type { ArcadeGameEngine, ArcadeGameEngineOptions, EngineState } from "@/lib/games/types";
 
-const COLS = 20;
-const ROWS = 20;
-const CELL = 30;
+const COLS = 25;
+const ROWS = 25;
+const CELL = 24;
+
+const FRUIT_KEYS = Object.keys(FRUITS);
+const FRUIT_POINTS = 10;
+const BASE_TICK_INTERVAL = 150;
+const MIN_TICK_INTERVAL = 60;
+const TICK_INTERVAL_STEP = 4;
 
 interface Segment {
   x: number;
@@ -21,10 +28,12 @@ export class SnakeEngine implements ArcadeGameEngine {
   private snakeBody!: Segment[];
   private direction!: Direction;
   private nextDirection: Direction | null = null;
+  private fruitCell!: Segment;
+  private fruitKey!: string;
   private score = 0;
   private gameOver = false;
   private tickAccum = 0;
-  private tickInterval = 150;
+  private tickInterval = BASE_TICK_INTERVAL;
   private lastNotified: EngineState | null = null;
 
   private lastTime: number | null = null;
@@ -43,10 +52,10 @@ export class SnakeEngine implements ArcadeGameEngine {
   };
 
   private onKeyDown = (e: KeyboardEvent) => {
+    if (!this.running) return;
     const candidate = SnakeEngine.KEY_DIRECTIONS[e.code];
     if (!candidate) return;
     e.preventDefault();
-    if (this.gameOver) return;
     if (candidate.x === -this.direction.x && candidate.y === -this.direction.y) return;
     this.nextDirection = candidate;
   };
@@ -60,6 +69,7 @@ export class SnakeEngine implements ArcadeGameEngine {
     window.addEventListener("keydown", this.onKeyDown);
 
     this.initGame();
+    loadFruitSheet(() => this.draw());
   }
 
   start() {
@@ -104,10 +114,24 @@ export class SnakeEngine implements ArcadeGameEngine {
     this.score = 0;
     this.gameOver = false;
     this.tickAccum = 0;
-    this.tickInterval = 150;
+    this.tickInterval = BASE_TICK_INTERVAL;
     this.lastNotified = null;
+    this.spawnFruit();
     this.notifyStateChange();
     this.draw();
+  }
+
+  private spawnFruit() {
+    const freeCells: Segment[] = [];
+    for (let x = 0; x < COLS; x++) {
+      for (let y = 0; y < ROWS; y++) {
+        if (!this.snakeBody.some((s) => s.x === x && s.y === y)) {
+          freeCells.push({ x, y });
+        }
+      }
+    }
+    this.fruitCell = freeCells[Math.floor(Math.random() * freeCells.length)];
+    this.fruitKey = FRUIT_KEYS[Math.floor(Math.random() * FRUIT_KEYS.length)];
   }
 
   private notifyStateChange() {
@@ -146,8 +170,18 @@ export class SnakeEngine implements ArcadeGameEngine {
       return;
     }
 
+    const ateFruit = newHead.x === this.fruitCell.x && newHead.y === this.fruitCell.y;
     this.snakeBody.unshift(newHead);
-    this.snakeBody.pop();
+    if (ateFruit) {
+      this.score += FRUIT_POINTS;
+      this.tickInterval = Math.max(
+        MIN_TICK_INTERVAL,
+        BASE_TICK_INTERVAL - (this.snakeBody.length - 1) * TICK_INTERVAL_STEP,
+      );
+      this.spawnFruit();
+    } else {
+      this.snakeBody.pop();
+    }
   }
 
   private endGame() {
@@ -183,10 +217,33 @@ export class SnakeEngine implements ArcadeGameEngine {
     }
   }
 
+  private drawFruit() {
+    const sheet = getFruitSheet();
+    if (!sheet) return;
+    const sprite = FRUITS[this.fruitKey];
+    const scale = Math.min(CELL / sprite.w, CELL / sprite.h);
+    const dw = sprite.w * scale;
+    const dh = sprite.h * scale;
+    const cellX = this.fruitCell.x * CELL;
+    const cellY = this.fruitCell.y * CELL;
+    this.ctx.drawImage(
+      sheet,
+      sprite.x,
+      sprite.y,
+      sprite.w,
+      sprite.h,
+      cellX + (CELL - dw) / 2,
+      cellY + (CELL - dh) / 2,
+      dw,
+      dh,
+    );
+  }
+
   private draw() {
     const ctx = this.ctx;
     ctx.clearRect(0, 0, COLS * CELL, ROWS * CELL);
     this.drawGrid();
+    this.drawFruit();
     this.drawSnake();
   }
 
