@@ -34,6 +34,13 @@ Flujo de Spec Driven Design (skills globales en `~/.claude/skills/`):
 - `/spec-impl` — implementa un spec ya aprobado.
 - `/add-game` (skill de proyecto en `.claude/skills/add-game/SKILL.md`) — genera el spec de un juego nuevo con leaderboard (`specs/NN-<slug>.md`) siguiendo el patrón de los specs 05–09; no escribe código, no toca Supabase ni ejecuta migraciones.
 
+## Agentes
+
+- `game-planner` (`.claude/agents/game-planner.md`) — analiza el catálogo y recomienda qué juego agregar a
+  continuación. Mantiene memoria en `references/game-ideas.md` y el backlog en
+  `references/game-suggestions-todo.md`. No escribe código ni specs; el siguiente paso tras su recomendación
+  es `/add-game`.
+
 ## Dev server
 
 Antes de levantar `npm run dev`, verificar si ya hay una instancia corriendo (por ejemplo, revisando procesos en el puerto 3000). Si ya hay una instancia levantada, reutilizarla en vez de levantar una nueva.
@@ -74,3 +81,5 @@ Punto de extensión introducido en el SPEC 07, usado por los juegos actuales y f
 **Código fuente de los juegos portados** (`references/started-games/`): JS original de cada juego antes de portarlo a TypeScript/Canvas (`02-asteroids`, `03-tetris`, `04-arkanoid`), fuente de verdad para nuevos ports vía `/add-game`.
 
 **Assets crudos** (`references/assest-source/`): recursos gráficos sin procesar usados como base de un motor (ej. `snake-assets/`).
+
+**Catálogo actual y memoria del planificador** (`references/implemented-games.md`, `references/game-ideas.md`, `references/game-suggestions-todo.md`): estado del catálogo de juegos y memoria/backlog que mantiene el agente `game-planner` (ver "Agentes" arriba).
