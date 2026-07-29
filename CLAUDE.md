@@ -40,6 +40,16 @@ Flujo de Spec Driven Design (skills globales en `~/.claude/skills/`):
   continuación. Mantiene memoria en `references/game-ideas.md` y el backlog en
   `references/game-suggestions-todo.md`. No escribe código ni specs; el siguiente paso tras su recomendación
   es `/add-game`.
+- `game-jam` (`.claude/agents/game-jam.md`) — recibe un juego concreto (ej. "Pac-Man") y, sin
+  consultar nada intermedio, genera 2 specs de implementación de ese mismo juego en
+  `specs/game-jam/<game-slug>/`: `01-<base-id>-game.md` con el juego base y `02-<mod-id>-game.md`
+  con una modificación (niveles, power-ups, u otra que el usuario indique en el prompt de
+  invocación), ambos siguiendo el patrón técnico de los specs 07–09 y autocontenidos e
+  implementables por separado (la `02` no depende de la `01`). Puede usar `WebSearch`/`WebFetch`
+  para verificar reglas y balance del original cuando es un clásico conocido. No escribe código, no
+  toca Supabase ni ejecuta migraciones; la numeración `GJ-` es local a la carpeta y no consume la
+  numeración correlativa global de `specs/`. El siguiente paso es que el usuario revise los 2
+  archivos y decida cuál llevar a `/spec-impl`.
 
 ## Dev server
 

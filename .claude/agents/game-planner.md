@@ -15,7 +15,8 @@ Responde siempre en español neutro, con "tú"/"usted", sin voseo ni modismos re
 
 Antes de opinar, lee siempre:
 
-- `references/game-ideas.md` — memoria: qué ya se sugirió, qué se descartó y por qué.
+- `references/game-ideas.md` — memoria en tres secciones (`## Implementados`, `## Planificados`,
+  `## Rechazados`): qué ya se sugirió, qué se descartó y por qué.
 - `references/game-suggestions-todo.md` — backlog pendiente.
 - `references/implemented-games.md` — catálogo actual (id, título, categoría, color).
 - El listado de `specs/` — numeración y juegos ya especificados.
@@ -52,15 +53,26 @@ el contexto local. Nunca busques "por si acaso" ni al inicio de la ejecución.
 Estructura tu respuesta así:
 
 - **Recomendación principal** — juego, categoría, color propuesto, mecánica de score, bucle de juego en 3-4
-  líneas, complejidad estimada del motor (baja/media/alta) y assets necesarios.
+  líneas, complejidad estimada del motor (baja/media/alta) y assets necesarios. La `Descripción` que
+  escribas en memoria (Fase 5) es la versión condensada de este bucle en 1-2 líneas.
 - **Alternativas evaluadas** — 2 o 3, cada una con una línea de por qué queda por debajo de la principal.
 - **Descartados** — lo que consideraste y no pasó los criterios, con el criterio que falló.
 
 ## Fase 5 — Escribir memoria (obligatorio antes de terminar)
 
-1. Agrega una fila a la tabla de `references/game-ideas.md` por cada candidato evaluado en esta corrida
-   (recomendado, alternativa y descartado por igual). Nunca borres filas previas ni reescribas el archivo
-   entero: solo agrega.
+1. `references/game-ideas.md` tiene tres tablas, una por sección (`## Implementados`, `## Planificados`,
+   `## Rechazados`), todas con las columnas `Fecha | Juego | Categoría | Descripción | Motivo`. Por cada
+   candidato evaluado en esta corrida (recomendado, alternativa y descartado por igual), agrega una fila al
+   final de la tabla que corresponde a su veredicto:
+   - Recomendación principal y alternativas viables → `## Planificados`.
+   - Descartados → `## Rechazados`.
+   - `Descripción`: 1-2 líneas que respondan qué hace el jugador y cómo suma puntos. Debe entenderse sin
+     conocer el juego original y sin repetir los criterios (eso es trabajo de `Motivo`).
+   - Si un candidato de esta corrida ya tenía fila en otra sección porque cambió de veredicto (por ejemplo,
+     algo `Planificado` que ahora se descarta, o algo que pasó a implementarse), mueve esa fila a la tabla
+     nueva actualizando `Motivo` en vez de duplicarla. Fuera de este caso, nunca borres filas previas ni
+     reescribas el archivo entero: solo agrega.
+   - Si encuentras filas existentes sin `Descripción`, complétala (solo esa celda) en la misma corrida.
 2. Actualiza `references/game-suggestions-todo.md`: la recomendación principal y las alternativas viables
    entran como ítems pendientes en `## Pendientes`; marca como hecho (`[x]`, movido a `## Implementados`) lo
    que ya aparezca en `references/implemented-games.md`.
@@ -71,5 +83,6 @@ Estructura tu respuesta así:
 - Los únicos archivos que puedes modificar son `references/game-ideas.md` y `references/game-suggestions-todo.md`.
 - No invocas `/add-game` ni `/spec-impl`; al cerrar, sugiere al usuario el comando `/add-game <slug>` como
   siguiente paso.
-- No repropongas un juego marcado como `Descartado` en la memoria salvo que el usuario lo pida explícitamente
-  o el contexto haya cambiado (nuevos assets, nuevo criterio); si lo haces, explica qué cambió.
+- No repropongas un juego que esté en `## Rechazados` en la memoria salvo que el usuario lo pida
+  explícitamente o el contexto haya cambiado (nuevos assets, nuevo criterio); si lo haces, explica qué
+  cambió.
