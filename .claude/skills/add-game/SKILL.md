@@ -88,7 +88,10 @@ lo leído en la Fase 1 (no preguntes en blanco si la referencia ya sugiere una r
 2. **Título**, descripción corta y larga (copy para `games.title/short/long`).
 3. **Categoría** (`ARCADE`/`PUZZLE`/`SHOOTER`/`VERSUS`) y **color** (`cyan`/`magenta`/`green`/
    `yellow`).
-4. **Cover**: clase `cover-*` a reutilizar de `app/globals.css` o crear una nueva.
+4. **Cover**: clase `cover-*` a reutilizar de `app/globals.css` o crear una nueva. Si el juego no
+   tiene portada de referencia (no hay carpeta en `references/started-games` o no incluye un
+   asset de portada), acláralo en la pregunta: el spec deberá incluir el diseño de la portada
+   como parte del paso correspondiente, en vez de asumir un estilo por defecto.
 5. **Dimensiones del canvas** (ancho×alto) y si necesita un segundo canvas.
 6. **Stats del HUD** (aparte de Puntuación) y **controles de teclado**.
 
@@ -122,11 +125,18 @@ best_seed, plays_seed) values (...)` con `best_seed: 0`, `plays_seed: '0'`, en u
 - **Plan de implementación**: pasos numerados, cada uno dejando el sistema funcional, típicamente:
   1. (Solo si el registry no existe) crear `lib/games/types.ts` y `lib/games/registry.ts`,
      adaptar `GamePlayer.tsx`.
-  2. Motor del juego en `lib/games/<id>/engine.ts`, implementando `ArcadeGameEngine`.
-  3. Assets a `public/games/<id>/` si aplica.
-  4. Alta de la entrada en `lib/games/registry.ts`.
-  5. Clase `.cover-<slug>` en `app/globals.css` si no se reutiliza una existente.
-  6. Migración de seed en Supabase, aplicada con `apply_migration` del MCP.
+  2. Migración de seed en Supabase (alta de la fila en `games`), aplicada con `apply_migration`
+     del MCP. Va antes del motor a propósito: deja el juego visible en `/salon` y en
+     `/biblioteca` (con portada y datos reales) desde el principio, aunque todavía no tenga
+     motor jugable.
+  3. Motor del juego en `lib/games/<id>/engine.ts`, implementando `ArcadeGameEngine`.
+  4. Assets a `public/games/<id>/` si aplica.
+  5. Alta de la entrada en `lib/games/registry.ts`.
+  6. Clase `.cover-<slug>` en `app/globals.css`: reutiliza una existente si aplica; si el juego
+     **no tiene portada de referencia** (sin carpeta en `references/started-games` o sin asset
+     de portada dentro de ella), este paso debe indicar explícitamente diseñar la portada nueva
+     invocando la skill `/frontend-design` (según `CLAUDE.md` del proyecto) antes de darla por
+     terminada — no debe quedar como un placeholder sin diseño intencional.
   7. Repaso final: `npm run build` y prueba manual del flujo completo.
 - **Riesgos identificados**: incluye siempre los heredados de `specs/05-asteroids-game.md`
   (son estructurales al patrón "motor con `requestAnimationFrame` dentro de un componente React",
