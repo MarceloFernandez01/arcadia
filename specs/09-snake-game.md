@@ -1,6 +1,6 @@
 # SPEC 09 — Juego Snake
 
-> **Estado:** Aprobado
+> **Estado:** Implementado
 > **Depende de:** SPEC 05 (asteroids-game), SPEC 06 (leaderboard-supabase), SPEC 07 (tetris-game)
 > **Fecha:** 2026-07-28
 > **Objetivo:** Implementar Snake como motor real en TypeScript/Canvas bajo el id `snake`, con grid clásico, wrap-around en los bordes y frutas del atlas retro de `references/assest-source/snake-assets/`, dado de alta en `lib/games/registry.ts` y en Supabase para que aparezca en el Salón de la Fama.
@@ -120,23 +120,23 @@ values (
 
 ## Criterios de aceptación
 
-- [ ] Existe `lib/games/snake/fruits.ts` con el mapa `FRUITS` (21 frutas, coordenadas portadas de `sprites.js`; los nombres son solo claves internas y no necesitan coincidir exactamente con el sprite visual) y `lib/games/snake/engine.ts` con `SnakeEngine implements ArcadeGameEngine`, sin variables globales de módulo.
-- [ ] El asset `fruits.png` existe en `public/games/snake/fruits.png` y el motor lo carga desde ahí.
-- [ ] Existe una fila `snake` en `games` (Supabase) con los valores acordados (`cat: 'ARCADE'`, `color: 'yellow'`, `cover: 'cover-snake'`, `best_seed: 0`, `plays_seed: '0'`).
-- [ ] `/jugar/snake` renderiza el canvas del grid dentro de `.crt-screen`.
-- [ ] El HUD de React refleja en tiempo real Puntuación y Longitud del motor (no valores fijos).
-- [ ] Mover la serpiente con flechas y con WASD funciona; no se puede girar 180° instantáneamente sobre el propio cuello.
-- [ ] Cruzar cualquiera de los cuatro bordes hace que la serpiente reaparezca del lado opuesto (wrap-around), sin terminar la partida.
-- [ ] Comer una fruta suma exactamente 10 puntos, hace crecer la serpiente un segmento y genera una nueva fruta aleatoria en una celda libre.
-- [ ] El avance de la serpiente se basa en delta time real (no en frames), de modo que la velocidad percibida es la misma sin importar la tasa de refresco del monitor.
-- [ ] La velocidad del tick disminuye (la serpiente se mueve más rápido) a medida que la longitud aumenta, respetando un piso mínimo de intervalo.
-- [ ] Chocar contra el propio cuerpo invoca `onGameOver` y abre automáticamente el modal de fin de partida con el puntaje real, sin overlay interno "GAME OVER".
-- [ ] PAUSA/REANUDAR detiene y reactiva el loop sin saltos ni movimientos perdidos.
-- [ ] "GUARDAR PUNTUACIÓN" inserta una fila en `scores` con `game_id: "snake"`, `user_id: null`, `score` real.
-- [ ] "JUGAR DE NUEVO" reinicia una instancia nueva del motor (serpiente en posición inicial, score 0, longitud inicial).
-- [ ] Snake aparece como tab nuevo en `/salon` (sin tocar código de `HallOfFame.tsx`) y su top coincide con el mostrado en `/juego/snake`.
-- [ ] Salir del juego (botón "SALIR" o navegar fuera de `/jugar/snake`) cancela el `requestAnimationFrame` y remueve los listeners de teclado.
-- [ ] `npm run build` compila sin errores de tipos.
+- [x] Existe `lib/games/snake/fruits.ts` con el mapa `FRUITS` (21 frutas, coordenadas portadas de `sprites.js`; los nombres son solo claves internas y no necesitan coincidir exactamente con el sprite visual) y `lib/games/snake/engine.ts` con `SnakeEngine implements ArcadeGameEngine`, sin variables globales de módulo.
+- [x] El asset `fruits.png` existe en `public/games/snake/fruits.png` y el motor lo carga desde ahí.
+- [x] Existe una fila `snake` en `games` (Supabase) con los valores acordados (`cat: 'ARCADE'`, `color: 'yellow'`, `cover: 'cover-snake'`, `best_seed: 0`, `plays_seed: '0'`).
+- [x] `/jugar/snake` renderiza el canvas del grid dentro de `.crt-screen`.
+- [x] El HUD de React refleja en tiempo real Puntuación y Longitud del motor (no valores fijos).
+- [x] Mover la serpiente con flechas y con WASD funciona; no se puede girar 180° instantáneamente sobre el propio cuello.
+- [x] Cruzar cualquiera de los cuatro bordes hace que la serpiente reaparezca del lado opuesto (wrap-around), sin terminar la partida.
+- [x] Comer una fruta suma exactamente 10 puntos, hace crecer la serpiente un segmento y genera una nueva fruta aleatoria en una celda libre.
+- [x] El avance de la serpiente se basa en delta time real (no en frames), de modo que la velocidad percibida es la misma sin importar la tasa de refresco del monitor.
+- [x] La velocidad del tick disminuye (la serpiente se mueve más rápido) a medida que la longitud aumenta, respetando un piso mínimo de intervalo.
+- [x] Chocar contra el propio cuerpo invoca `onGameOver` y abre automáticamente el modal de fin de partida con el puntaje real, sin overlay interno "GAME OVER".
+- [x] PAUSA/REANUDAR detiene y reactiva el loop sin saltos ni movimientos perdidos.
+- [x] "GUARDAR PUNTUACIÓN" inserta una fila en `scores` con `game_id: "snake"`, `user_id: null`, `score` real.
+- [x] "JUGAR DE NUEVO" reinicia una instancia nueva del motor (serpiente en posición inicial, score 0, longitud inicial).
+- [x] Snake aparece como tab nuevo en `/salon` (sin tocar código de `HallOfFame.tsx`) y su top coincide con el mostrado en `/juego/snake`.
+- [x] Salir del juego (botón "SALIR" o navegar fuera de `/jugar/snake`) cancela el `requestAnimationFrame` y remueve los listeners de teclado.
+- [x] `npm run build` compila sin errores de tipos.
 
 ## Decisiones tomadas y descartadas
 
