@@ -15,9 +15,6 @@ Veredictos: `Implementado` | `Sugerido` | `Descartado`.
 | 2026-07-28 | Space Invaders | SHOOTER | Descartado | Criterio 7: duplica categoría/mecánica de Asteroides. |
 | 2026-07-28 | Pac-Man    | ARCADE    | Descartado   | Criterio 3: motor de pathfinding/laberinto de complejidad alta. |
 | 2026-07-28 | Missile Command | SHOOTER | Descartado | Criterio 5: mecánica original depende de apuntar con puntero, no teclado. |
-| 2026-07-28 | Pong (Duelo Neón) | VERSUS | Sugerido | Reconfirmado como recomendación principal: sigue siendo el único hueco VERSUS (criterio 7), motor de complejidad baja (criterio 3), sin assets nuevos y con portada `.cover-duelo` ya escrita en `app/globals.css`. Nota: el union `Game["color"]` solo admite cyan/magenta/green/yellow, los cuatro ya tomados; se reutiliza magenta o se amplía el tipo en el spec. |
-| 2026-07-28 | Frogger (Rana) | ARCADE | Sugerido | Alternativa: motor viable y portada `.cover-rana` ya existente, pero no diversifica categoría (ya hay 2 ARCADE). |
-| 2026-07-28 | 2048 | PUZZLE | Sugerido | Alternativa: score acumulable claro y control por teclado, pero duplica PUZZLE y su render por grilla aprovecha poco Canvas+rAF. |
 | 2026-07-28 | Lunar Lander | ARCADE | Sugerido | Alternativa nueva: score por aterrizajes/combustible, motor bajo y solo formas vectoriales, pero repite categoría ARCADE y su bucle es más lento que el resto del catálogo. |
 | 2026-07-28 | Breakout clásico | ARCADE | Descartado | Criterio 7: solapa por completo con Arkanoid (spec 08). |
 | 2026-07-28 | Simon (memoria de secuencias) | PUZZLE | Descartado | Criterio 3/criterio 4: depende de retroalimentación sonora para ser jugable y su score es un contador de rondas muy plano. |
