@@ -1,6 +1,7 @@
 import { ArkanoidEngine } from "@/lib/games/arkanoid/engine";
 import { AsteroidsEngine } from "@/lib/games/asteroids/engine";
 import { SnakeEngine } from "@/lib/games/snake/engine";
+import { CANONICAL_SKINS } from "@/lib/games/skins";
 import { TetrisEngine } from "@/lib/games/tetris/engine";
 import type { ArcadeGameEngine, ArcadeGameEngineOptions, EngineState } from "@/lib/games/types";
 
@@ -21,6 +22,7 @@ export const GAME_REGISTRY: Record<string, GameRegistryEntry> = {
   asteroides: {
     width: 800,
     height: 600,
+    colorSchemes: CANONICAL_SKINS,
     initialState: {
       score: 0,
       stats: [
@@ -40,6 +42,7 @@ export const GAME_REGISTRY: Record<string, GameRegistryEntry> = {
           });
         },
         onGameOver: options.onGameOver,
+        initialColorScheme: options.initialColorScheme,
       });
     },
   },
