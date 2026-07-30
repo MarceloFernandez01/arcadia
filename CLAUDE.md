@@ -50,6 +50,13 @@ Flujo de Spec Driven Design (skills globales en `~/.claude/skills/`):
   toca Supabase ni ejecuta migraciones; la numeración `GJ-` es local a la carpeta y no consume la
   numeración correlativa global de `specs/`. El siguiente paso es que el usuario revise los 2
   archivos y decida cuál llevar a `/spec-impl`.
+- `skin-designer` (`.claude/agents/skin-designer.md`) — aplica los 3 skins canónicos
+  (`clasico`/`retro`/`neon`) al motor de un juego concreto, uno por invocación (nunca reskinea el
+  catálogo entero de una corrida). Si no se le indica un juego, reporta pendientes desde
+  `references/game-with-theme.md` y se detiene. A diferencia de `game-planner`/`game-jam`, sí escribe
+  código: crea `lib/games/skins.ts` y `lib/games/<id>/skins.ts`, refactoriza el `engine.ts` del juego
+  indicado y verifica el resultado con capturas de Playwright. Mantiene memoria en
+  `references/game-with-theme.md`.
 
 ## Dev server
 
@@ -72,6 +79,9 @@ Punto de extensión introducido en el SPEC 07, usado por los juegos actuales y f
 - `components/GamePlayer.tsx` es genérico: instancia el motor a través del registry según `game.id`, renderiza el HUD desde `engineState.stats`, agrega el canvas secundario cuando la entrada lo declara (hoy solo Tetris) y el selector de esquema de color cuando hay `colorSchemes` (hoy solo Tetris). **No debe volver a hardcodear un motor específico.**
 - Convención para un juego nuevo: motor en `lib/games/<id>/engine.ts`, assets propios en `public/games/<id>/`, portada en una clase `.cover-<slug>` de `app/globals.css`, canvas con clase `game-canvas` (o `game-canvas-fixed` si hay canvas secundario). El motor nunca dibuja sus propios overlays de "GAME OVER"/"PAUSA"; dispara `onGameOver(finalScore)` y React controla pausa/modal.
 - La skill `/add-game` describe este mismo patrón en detalle y lo usa para generar specs de juegos nuevos.
+- Todo juego nuevo debe declarar, tarde o temprano, los 3 skins canónicos de la plataforma (`clasico`
+  default, `retro`, `neon`) vía `lib/games/skins.ts` y `lib/games/<id>/skins.ts`; ver el agente
+  `skin-designer` en "Agentes" y su memoria en `references/game-with-theme.md`.
 
 ### Supabase y migraciones
 
@@ -93,3 +103,5 @@ Punto de extensión introducido en el SPEC 07, usado por los juegos actuales y f
 **Assets crudos** (`references/assest-source/`): recursos gráficos sin procesar usados como base de un motor (ej. `snake-assets/`).
 
 **Catálogo actual y memoria del planificador** (`references/implemented-games.md`, `references/game-ideas.md`, `references/game-suggestions-todo.md`): estado del catálogo de juegos y memoria/backlog que mantiene el agente `game-planner` (ver "Agentes" arriba).
+
+**Memoria de skins** (`references/game-with-theme.md`): estado de skins (`clasico`/`retro`/`neon`) por juego que mantiene el agente `skin-designer` (ver "Agentes" arriba).
