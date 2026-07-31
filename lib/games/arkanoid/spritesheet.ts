@@ -1,3 +1,6 @@
+import { ARKANOID_SKINS, type ArkanoidBlockColor } from "@/lib/games/arkanoid/skins";
+import { SKIN_IDS, type SkinId } from "@/lib/games/skins";
+
 export interface SpriteFrame {
   sx: number;
   sy: number;
@@ -73,6 +76,73 @@ export const SPRITES: {
 let ssImg: HTMLCanvasElement | null = null;
 let ssLoaded = false;
 const ssCallbacks: Array<() => void> = [];
+const tintedSheets: Partial<Record<SkinId, HTMLCanvasElement>> = {};
+
+/**
+ * Recortes del atlas junto al color de la paleta que los pinta. Los frames de explosión reutilizan
+ * el color del bloque que representan; `gray` comparte recortes con `red`, así que se deduplica por
+ * rectángulo para no teñir dos veces la misma zona.
+ */
+function tintRegions(): { frame: SpriteFrame; colorKey: ArkanoidBlockColor | "paddle" | "ball" }[] {
+  const regions: { frame: SpriteFrame; colorKey: ArkanoidBlockColor | "paddle" | "ball" }[] = [];
+  const seen = new Set<string>();
+  const push = (frame: SpriteFrame, colorKey: ArkanoidBlockColor | "paddle" | "ball") => {
+    const id = `${frame.sx},${frame.sy},${frame.sw},${frame.sh}`;
+    if (seen.has(id)) return;
+    seen.add(id);
+    regions.push({ frame, colorKey });
+  };
+
+  push(SPRITES.paddle, "paddle");
+  push(SPRITES.ball, "ball");
+  for (const [color, frame] of Object.entries(SPRITES.blocks)) {
+    push(frame, color as ArkanoidBlockColor);
+  }
+  for (const [color, frames] of Object.entries(EXPLOSION_FRAMES)) {
+    for (const frame of frames) push(frame, color as ArkanoidBlockColor);
+  }
+  return regions;
+}
+
+function buildTintedSheet(source: HTMLCanvasElement, skin: SkinId): HTMLCanvasElement {
+  const palette = ARKANOID_SKINS[skin];
+  const oc = document.createElement("canvas");
+  oc.width = source.width;
+  oc.height = source.height;
+  const octx = oc.getContext("2d");
+  if (!octx) return source;
+  octx.drawImage(source, 0, 0);
+  if (palette.tintStrength <= 0) return oc;
+
+  for (const { frame, colorKey } of tintRegions()) {
+    const color =
+      colorKey === "paddle"
+        ? palette.paddle
+        : colorKey === "ball"
+          ? palette.ball
+          : palette.blocks[colorKey];
+    octx.save();
+    octx.beginPath();
+    octx.rect(frame.sx, frame.sy, frame.sw, frame.sh);
+    octx.clip();
+    // `source-atop` respeta el alfa del sprite; el alfa parcial conserva el bisel del pixel art.
+    octx.globalCompositeOperation = "source-atop";
+    octx.globalAlpha = palette.tintStrength;
+    octx.fillStyle = color;
+    octx.fillRect(frame.sx, frame.sy, frame.sw, frame.sh);
+    octx.restore();
+  }
+  return oc;
+}
+
+export function getSheet(skin: SkinId): HTMLCanvasElement | null {
+  if (!ssLoaded || !ssImg) return null;
+  const cached = tintedSheets[skin];
+  if (cached) return cached;
+  const built = buildTintedSheet(ssImg, skin);
+  tintedSheets[skin] = built;
+  return built;
+}
 
 export function loadSpritesheet(cb: () => void): void {
   if (ssLoaded) {
@@ -91,6 +161,7 @@ export function loadSpritesheet(cb: () => void): void {
     octx?.drawImage(rawImg, 0, 0);
     ssImg = oc;
     ssLoaded = true;
+    for (const skin of SKIN_IDS) tintedSheets[skin] = buildTintedSheet(oc, skin);
     ssCallbacks.forEach((f) => f());
   };
   rawImg.onerror = () => console.error("Failed to load spritesheet");
@@ -99,25 +170,27 @@ export function loadSpritesheet(cb: () => void): void {
 
 export function drawFrame(
   ctx: CanvasRenderingContext2D,
+  sheet: HTMLCanvasElement | null,
   frame: SpriteFrame,
   x: number,
   y: number,
   w: number,
   h: number,
 ): void {
-  if (!ssLoaded || !ssImg) return;
-  ctx.drawImage(ssImg, frame.sx, frame.sy, frame.sw, frame.sh, x, y, w, h);
+  if (!sheet) return;
+  ctx.drawImage(sheet, frame.sx, frame.sy, frame.sw, frame.sh, x, y, w, h);
 }
 
 export function drawSprite(
   ctx: CanvasRenderingContext2D,
+  sheet: HTMLCanvasElement | null,
   name: string,
   x: number,
   y: number,
   w: number,
   h: number,
 ): void {
-  if (!ssLoaded || !ssImg) return;
+  if (!sheet) return;
   let sp: SpriteFrame | undefined;
   if (name.startsWith("block_")) {
     sp = SPRITES.blocks[name.slice(6)];
@@ -125,5 +198,5 @@ export function drawSprite(
     sp = (SPRITES as unknown as Record<string, SpriteFrame>)[name];
   }
   if (!sp) return;
-  ctx.drawImage(ssImg, sp.sx, sp.sy, sp.sw, sp.sh, x, y, w, h);
+  ctx.drawImage(sheet, sp.sx, sp.sy, sp.sw, sp.sh, x, y, w, h);
 }

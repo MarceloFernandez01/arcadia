@@ -1,9 +1,12 @@
-import { FRUITS, getFruitSheet, loadFruitSheet } from "@/lib/games/snake/fruits";
+import { FRUITS, getFruitSheetForSkin, loadFruitSheet } from "@/lib/games/snake/fruits";
+import { SNAKE_SKINS, type SnakePalette } from "@/lib/games/snake/skins";
+import { resolveSkin, type SkinId } from "@/lib/games/skins";
 import type { ArcadeGameEngine, ArcadeGameEngineOptions, EngineState } from "@/lib/games/types";
 
 const COLS = 25;
 const ROWS = 25;
 const CELL = 24;
+const GAME_ID = "snake";
 
 const FRUIT_KEYS = Object.keys(FRUITS);
 const FRUIT_POINTS = 10;
@@ -24,6 +27,8 @@ interface Direction {
 export class SnakeEngine implements ArcadeGameEngine {
   private ctx: CanvasRenderingContext2D;
   private options: ArcadeGameEngineOptions;
+  private skin: SkinId;
+  private palette: SnakePalette;
 
   private snakeBody!: Segment[];
   private direction!: Direction;
@@ -65,6 +70,8 @@ export class SnakeEngine implements ArcadeGameEngine {
     if (!ctx) throw new Error("No se pudo obtener el contexto 2D del canvas");
     this.ctx = ctx;
     this.options = options;
+    this.skin = resolveSkin(options.initialColorScheme, GAME_ID);
+    this.palette = SNAKE_SKINS[this.skin];
 
     window.addEventListener("keydown", this.onKeyDown);
 
@@ -103,6 +110,12 @@ export class SnakeEngine implements ArcadeGameEngine {
   destroy() {
     this.pause();
     window.removeEventListener("keydown", this.onKeyDown);
+  }
+
+  setColorScheme(scheme: string) {
+    this.skin = resolveSkin(scheme, GAME_ID);
+    this.palette = SNAKE_SKINS[this.skin];
+    this.draw();
   }
 
   private initGame() {
@@ -193,7 +206,7 @@ export class SnakeEngine implements ArcadeGameEngine {
 
   private drawGrid() {
     const ctx = this.ctx;
-    ctx.strokeStyle = "rgba(255,255,255,0.08)";
+    ctx.strokeStyle = this.palette.grid;
     ctx.lineWidth = 0.5;
     for (let c = 1; c < COLS; c++) {
       ctx.beginPath();
@@ -211,14 +224,19 @@ export class SnakeEngine implements ArcadeGameEngine {
 
   private drawSnake() {
     const ctx = this.ctx;
-    for (const segment of this.snakeBody) {
-      ctx.fillStyle = "#ffd54f";
+    const palette = this.palette;
+    this.snakeBody.forEach((segment, index) => {
+      const color = index === 0 ? palette.snakeHead : palette.snakeBody;
+      ctx.fillStyle = color;
+      ctx.shadowBlur = palette.glow;
+      ctx.shadowColor = color;
       ctx.fillRect(segment.x * CELL + 1, segment.y * CELL + 1, CELL - 2, CELL - 2);
-    }
+    });
+    ctx.shadowBlur = 0;
   }
 
   private drawFruit() {
-    const sheet = getFruitSheet();
+    const sheet = getFruitSheetForSkin(this.skin, this.palette.fruit);
     if (!sheet) return;
     const sprite = FRUITS[this.fruitKey];
     const scale = Math.min(CELL / sprite.w, CELL / sprite.h);
@@ -226,6 +244,8 @@ export class SnakeEngine implements ArcadeGameEngine {
     const dh = sprite.h * scale;
     const cellX = this.fruitCell.x * CELL;
     const cellY = this.fruitCell.y * CELL;
+    this.ctx.shadowBlur = this.palette.glow;
+    this.ctx.shadowColor = this.palette.fruit.glowColor;
     this.ctx.drawImage(
       sheet,
       sprite.x,
@@ -237,11 +257,16 @@ export class SnakeEngine implements ArcadeGameEngine {
       dw,
       dh,
     );
+    this.ctx.shadowBlur = 0;
   }
 
   private draw() {
     const ctx = this.ctx;
     ctx.clearRect(0, 0, COLS * CELL, ROWS * CELL);
+    if (this.palette.background) {
+      ctx.fillStyle = this.palette.background;
+      ctx.fillRect(0, 0, COLS * CELL, ROWS * CELL);
+    }
     this.drawGrid();
     this.drawFruit();
     this.drawSnake();
