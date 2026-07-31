@@ -160,7 +160,7 @@ export default function GamePlayer({ game }: { game: Game }) {
             </div>
           ))}
         </div>
-        {registryEntry.colorSchemes && (
+        {registryEntry.colorSchemes && !isTouch && (
           <div className="hud-stat">
             <div className="l">Esquema</div>
             <select
@@ -230,6 +230,22 @@ export default function GamePlayer({ game }: { game: Game }) {
                 <div className="pixel neon-yellow" style={{ fontSize: 18 }}>
                   EN PAUSA
                 </div>
+                {registryEntry.colorSchemes && (
+                  <div className="hud-stat" style={{ marginTop: 16 }}>
+                    <div className="l">Esquema</div>
+                    <select
+                      className="scheme-select"
+                      value={colorScheme}
+                      onChange={(e) => changeColorScheme(e.target.value)}
+                    >
+                      {registryEntry.colorSchemes.map((scheme) => (
+                        <option key={scheme.id} value={scheme.id}>
+                          {scheme.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
                 <div
                   style={{
                     display: "flex",
