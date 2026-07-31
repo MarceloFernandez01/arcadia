@@ -1125,6 +1125,12 @@ a {
   gap: 16px;
 }
 
+.av-player.touch-mode .pause-menu-mobile {
+  width: 100%;
+  max-width: 200px;
+  text-align: center;
+}
+
 .av-player.touch-mode .crt-screen {
   aspect-ratio: unset;
   height: auto;

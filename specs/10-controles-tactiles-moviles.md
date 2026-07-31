@@ -1,6 +1,6 @@
 # SPEC 10 — Controles táctiles para juegos móviles
 
-> **Estado:** Aprobado
+> **Estado:** Implementado
 > **Depende de:** SPEC 05 (asteroids-game), SPEC 07 (tetris-game), SPEC 08 (arkanoid-game), SPEC 09 (snake-game)
 > **Fecha:** 2026-07-30
 > **Objetivo:** Hacer jugables los 4 juegos actuales (Asteroids, Tetris, Arkanoid, Snake) en dispositivos móviles con pantalla táctil, agregando un D-pad y botones de acción debajo del canvas que despachan los mismos eventos de teclado que ya escucha cada motor, y adaptando el escalado de los canvases que hoy no se ajustan a pantallas angostas (Tetris y Snake). El escalado responsive es exclusivo del modo táctil: el canvas y el layout de escritorio no se modifican en ningún caso, y los controles nunca se superponen ni tapan el canvas.
@@ -143,28 +143,28 @@ const [pauseMenuOpen, setPauseMenuOpen] = useState(false);
 
 ## Criterios de aceptación
 
-- [ ] Existe `lib/useTouchDevice.ts` con el hook `useTouchDevice()` basado en feature detection táctil.
-- [ ] Existen los tipos `TouchButton` (con `code`, `key` y `repeat` opcional) y `TouchControlsConfig` en `lib/games/types.ts`, y `touchControls` está definido en `GameRegistryEntry` para los 4 juegos (asteroides, tetris, arkanoid, snake) con los valores acordados.
-- [ ] Existe `components/TouchControls.tsx`, que siempre renderiza las 4 posiciones del D-pad (las no habilitadas para el juego actual se muestran deshabilitadas, no ocultas).
-- [ ] En un dispositivo/emulación táctil, `TouchControls` aparece debajo del canvas, en flujo, en los 4 juegos; en un dispositivo sin touch, no aparece en ninguno.
-- [ ] Mantener presionado un botón de dirección o de acción activa la acción correspondiente de forma sostenida (igual que `keydown`/`keyup`), y soltar el dedo la detiene.
-- [ ] **En Arkanoid**, tocar y mantener el D-pad mueve la paleta (el evento sintético incluye `key`, no solo `code`, porque el motor filtra por `e.key`).
-- [ ] En Tetris, mantener presionado un botón del D-pad repite el movimiento a intervalo fijo mientras se sostiene, sin necesidad de tocar repetidamente.
-- [ ] En Asteroids, mantener presionado "DISPARAR" dispara en ráfaga a intervalo fijo (no una sola vez por toque).
-- [ ] En Asteroids, es posible mantener presionado "AVANZAR" y tocar "DISPARAR" al mismo tiempo (dos dedos, dos botones) sin que uno cancele al otro.
-- [ ] **En Asteroids y Tetris**, `TouchControls` se distribuye en fila con el D-pad a la izquierda y los botones de acción a la derecha (estilo joystick). **En Arkanoid y Snake**, el D-pad permanece centrado, sin distribución en fila.
-- [ ] **En escritorio (sin emulación táctil)**, el CSS de `.crt-screen`, `.game-canvas`, `.game-canvas-fixed` y `.next-piece-canvas` no cambia respecto al comportamiento anterior a este spec (todo el CSS nuevo cuelga de `.av-player.touch-mode`).
-- [ ] En emulación mobile de 375px de ancho, ningún canvas de los 4 juegos desborda horizontalmente la pantalla.
-- [ ] **En Tetris móvil**, el canvas conserva su relación de aspecto 1:2 y se ve proporcionalmente idéntico al de escritorio (mismo dibujo, solo reducido por CSS, sin cambiar los atributos `width`/`height` del canvas ni las constantes del motor).
-- [ ] El canvas secundario de "siguiente pieza" de Tetris es visible completo en emulación mobile de 375px, ubicado debajo del canvas principal (en flujo, sin offset fijo en px).
-- [ ] **En Snake móvil**, el canvas es cuadrado (1:1), sin la deformación a 4:3 que impone `.crt-screen` en escritorio.
-- [ ] **En ningún juego, en ningún viewport probado (incluido uno bajo, ej. 375×667), `TouchControls` se superpone al canvas ni lo tapa**; ambos quedan siempre visibles y accesibles en flujo vertical.
-- [ ] En emulación táctil, el HUD del reproductor oculta la fila "Jugador" y muestra Puntuación, los stats del juego, el selector de skin y un único botón de PAUSA.
-- [ ] Tocar el botón de PAUSA en mobile pausa el motor y abre un panel con REANUDAR, FIN y SALIR; tocar REANUDAR reanuda el juego y cierra el panel.
-- [ ] En escritorio (sin emulación táctil), el HUD y los botones PAUSA/FIN/SALIR se ven y comportan exactamente igual que antes de este spec.
-- [ ] El selector de skin sigue funcionando igual en los 4 juegos, tanto en desktop como en emulación táctil.
-- [ ] Salir del reproductor (`SALIR` en desktop, o desde el panel de pausa en mobile) sigue cancelando el loop del motor y removiendo listeners, sin fugas.
-- [ ] `npm run build` compila sin errores de tipos.
+- [x] Existe `lib/useTouchDevice.ts` con el hook `useTouchDevice()` basado en feature detection táctil.
+- [x] Existen los tipos `TouchButton` (con `code`, `key` y `repeat` opcional) y `TouchControlsConfig` en `lib/games/types.ts`, y `touchControls` está definido en `GameRegistryEntry` para los 4 juegos (asteroides, tetris, arkanoid, snake) con los valores acordados.
+- [x] Existe `components/TouchControls.tsx`, que siempre renderiza las 4 posiciones del D-pad (las no habilitadas para el juego actual se muestran deshabilitadas, no ocultas).
+- [x] En un dispositivo/emulación táctil, `TouchControls` aparece debajo del canvas, en flujo, en los 4 juegos; en un dispositivo sin touch, no aparece en ninguno.
+- [x] Mantener presionado un botón de dirección o de acción activa la acción correspondiente de forma sostenida (igual que `keydown`/`keyup`), y soltar el dedo la detiene.
+- [x] **En Arkanoid**, tocar y mantener el D-pad mueve la paleta (el evento sintético incluye `key`, no solo `code`, porque el motor filtra por `e.key`).
+- [x] En Tetris, mantener presionado un botón del D-pad repite el movimiento a intervalo fijo mientras se sostiene, sin necesidad de tocar repetidamente.
+- [x] En Asteroids, mantener presionado "DISPARAR" dispara en ráfaga a intervalo fijo (no una sola vez por toque).
+- [x] En Asteroids, es posible mantener presionado "AVANZAR" y tocar "DISPARAR" al mismo tiempo (dos dedos, dos botones) sin que uno cancele al otro.
+- [x] **En Asteroids y Tetris**, `TouchControls` se distribuye en fila con el D-pad a la izquierda y los botones de acción a la derecha (estilo joystick). **En Arkanoid y Snake**, el D-pad permanece centrado, sin distribución en fila.
+- [x] **En escritorio (sin emulación táctil)**, el CSS de `.crt-screen`, `.game-canvas`, `.game-canvas-fixed` y `.next-piece-canvas` no cambia respecto al comportamiento anterior a este spec (todo el CSS nuevo cuelga de `.av-player.touch-mode`).
+- [x] En emulación mobile de 375px de ancho, ningún canvas de los 4 juegos desborda horizontalmente la pantalla.
+- [x] **En Tetris móvil**, el canvas conserva su relación de aspecto 1:2 y se ve proporcionalmente idéntico al de escritorio (mismo dibujo, solo reducido por CSS, sin cambiar los atributos `width`/`height` del canvas ni las constantes del motor).
+- [x] El canvas secundario de "siguiente pieza" de Tetris es visible completo en emulación mobile de 375px, ubicado debajo del canvas principal (en flujo, sin offset fijo en px).
+- [x] **En Snake móvil**, el canvas es cuadrado (1:1), sin la deformación a 4:3 que impone `.crt-screen` en escritorio.
+- [x] **En ningún juego, en ningún viewport probado (incluido uno bajo, ej. 375×667), `TouchControls` se superpone al canvas ni lo tapa**; ambos quedan siempre visibles y accesibles en flujo vertical.
+- [x] En emulación táctil, el HUD del reproductor oculta la fila "Jugador" y muestra Puntuación, los stats del juego, el selector de skin y un único botón de PAUSA.
+- [x] Tocar el botón de PAUSA en mobile pausa el motor y abre un panel con REANUDAR, FIN y SALIR; tocar REANUDAR reanuda el juego y cierra el panel.
+- [x] En escritorio (sin emulación táctil), el HUD y los botones PAUSA/FIN/SALIR se ven y comportan exactamente igual que antes de este spec.
+- [x] El selector de skin sigue funcionando igual en los 4 juegos, tanto en desktop como en emulación táctil.
+- [x] Salir del reproductor (`SALIR` en desktop, o desde el panel de pausa en mobile) sigue cancelando el loop del motor y removiendo listeners, sin fugas.
+- [x] `npm run build` compila sin errores de tipos.
 
 ## Decisiones
 

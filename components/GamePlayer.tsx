@@ -32,6 +32,7 @@ export default function GamePlayer({ game }: { game: Game }) {
   const isTouch = useTouchDevice();
   const displayName = user ? user.name : "INVITADO";
   const [paused, setPaused] = useState(false);
+  const [pauseMenuOpen, setPauseMenuOpen] = useState(false);
   const [over, setOver] = useState(false);
   const [name, setName] = useState(displayName);
   const [saved, setSaved] = useState(false);
@@ -98,6 +99,18 @@ export default function GamePlayer({ game }: { game: Game }) {
     });
   };
 
+  const openPauseMenu = () => {
+    engineRef.current?.pause();
+    setPaused(true);
+    setPauseMenuOpen(true);
+  };
+
+  const resumeFromPauseMenu = () => {
+    engineRef.current?.resume();
+    setPaused(false);
+    setPauseMenuOpen(false);
+  };
+
   const endGame = () => {
     engineRef.current?.pause();
     setFinalScore(engineState.score);
@@ -109,6 +122,7 @@ export default function GamePlayer({ game }: { game: Game }) {
     engineRef.current?.restart();
     engineRef.current?.start();
     setPaused(false);
+    setPauseMenuOpen(false);
     setOver(false);
     setSaved(false);
   };
@@ -127,12 +141,14 @@ export default function GamePlayer({ game }: { game: Game }) {
     <div className={`av-player fade-in${isTouch ? " touch-mode" : ""}`}>
       <div className="player-hud">
         <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
-          <div className="hud-stat">
-            <div className="l">Jugador</div>
-            <div className="v" style={{ color: "var(--ink)" }}>
-              {name}
+          {!isTouch && (
+            <div className="hud-stat">
+              <div className="l">Jugador</div>
+              <div className="v" style={{ color: "var(--ink)" }}>
+                {name}
+              </div>
             </div>
-          </div>
+          )}
           <div className="hud-stat">
             <div className="l">Puntuación</div>
             <div className="v">{engineState.score}</div>
@@ -160,17 +176,25 @@ export default function GamePlayer({ game }: { game: Game }) {
             </select>
           </div>
         )}
-        <div className="hud-actions">
-          <button className="btn yellow" onClick={togglePause}>
-            {paused ? "REANUDAR" : "PAUSA"}
-          </button>
-          <button className="btn magenta" onClick={endGame}>
-            FIN
-          </button>
-          <button className="btn ghost" onClick={() => router.push(`/juego/${game.id}`)}>
-            SALIR
-          </button>
-        </div>
+        {isTouch ? (
+          <div className="hud-actions">
+            <button className="btn yellow" onClick={openPauseMenu}>
+              PAUSA
+            </button>
+          </div>
+        ) : (
+          <div className="hud-actions">
+            <button className="btn yellow" onClick={togglePause}>
+              {paused ? "REANUDAR" : "PAUSA"}
+            </button>
+            <button className="btn magenta" onClick={endGame}>
+              FIN
+            </button>
+            <button className="btn ghost" onClick={() => router.push(`/juego/${game.id}`)}>
+              SALIR
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="crt">
@@ -200,25 +224,53 @@ export default function GamePlayer({ game }: { game: Game }) {
               aria-label={registryEntry.secondaryCanvas.label}
             />
           )}
-          {paused && (
+          {paused && isTouch && pauseMenuOpen ? (
             <div className="crt-content" style={{ background: "rgba(0,0,0,0.6)", zIndex: 5 }}>
-              <div>
-                <div className="pixel neon-yellow" style={{ fontSize: 22 }}>
+              <div className="pause-menu-mobile">
+                <div className="pixel neon-yellow" style={{ fontSize: 18 }}>
                   EN PAUSA
                 </div>
                 <div
-                  className="mono"
                   style={{
-                    fontSize: 11,
-                    color: "var(--ink-dim)",
-                    marginTop: 10,
-                    letterSpacing: "0.16em",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 10,
+                    marginTop: 16,
                   }}
                 >
-                  PULSA REANUDAR PARA CONTINUAR
+                  <button className="btn yellow" onClick={resumeFromPauseMenu}>
+                    REANUDAR
+                  </button>
+                  <button className="btn magenta" onClick={endGame}>
+                    FIN
+                  </button>
+                  <button className="btn ghost" onClick={() => router.push(`/juego/${game.id}`)}>
+                    SALIR
+                  </button>
                 </div>
               </div>
             </div>
+          ) : (
+            paused && (
+              <div className="crt-content" style={{ background: "rgba(0,0,0,0.6)", zIndex: 5 }}>
+                <div>
+                  <div className="pixel neon-yellow" style={{ fontSize: 22 }}>
+                    EN PAUSA
+                  </div>
+                  <div
+                    className="mono"
+                    style={{
+                      fontSize: 11,
+                      color: "var(--ink-dim)",
+                      marginTop: 10,
+                      letterSpacing: "0.16em",
+                    }}
+                  >
+                    PULSA REANUDAR PARA CONTINUAR
+                  </div>
+                </div>
+              </div>
+            )
           )}
         </div>
         <div className="crt-bottom">
