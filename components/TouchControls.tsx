@@ -57,8 +57,10 @@ export default function TouchControls({ config }: { config: TouchControlsConfig 
     },
   });
 
+  const hasActions = config.actions.length > 0;
+
   return (
-    <div className="touch-controls">
+    <div className={`touch-controls${hasActions ? " touch-controls-joystick" : ""}`}>
       <div className="touch-dpad">
         {(Object.keys(DPAD_BUTTONS) as DpadDirection[]).map((direction) => {
           const button = DPAD_BUTTONS[direction];

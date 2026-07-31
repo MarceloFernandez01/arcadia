@@ -32,8 +32,8 @@ export const GAME_REGISTRY: Record<string, GameRegistryEntry> = {
     touchControls: {
       dpadEnabled: ["left", "right"],
       actions: [
-        { code: "ArrowUp", key: "ArrowUp", label: "AVANZAR" },
         { code: "Space", key: " ", label: "DISPARAR", repeat: true },
+        { code: "ArrowUp", key: "ArrowUp", label: "AVANZAR" },
       ],
     },
     initialState: {
