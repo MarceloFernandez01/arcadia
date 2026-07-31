@@ -73,6 +73,7 @@ export const GAME_REGISTRY: Record<string, GameRegistryEntry> = {
   arkanoid: {
     width: 800,
     height: 600,
+    colorSchemes: CANONICAL_SKINS,
     initialState: {
       score: 0,
       stats: [
@@ -87,6 +88,7 @@ export const GAME_REGISTRY: Record<string, GameRegistryEntry> = {
   snake: {
     width: 600,
     height: 600,
+    colorSchemes: CANONICAL_SKINS,
     initialState: {
       score: 0,
       stats: [{ key: "length", label: "Longitud", value: "1" }],

@@ -1,3 +1,5 @@
+import type { FruitTint } from "@/lib/games/snake/skins";
+
 export interface FruitSprite {
   x: number;
   y: number;
@@ -54,4 +56,37 @@ export function loadFruitSheet(cb: () => void): void {
 
 export function getFruitSheet(): HTMLImageElement | null {
   return fruitSheetLoaded ? fruitSheet : null;
+}
+
+const tintedSheets: Record<string, HTMLCanvasElement> = {};
+
+/**
+ * Devuelve el atlas teñido para un skin, generándolo una sola vez en un canvas offscreen.
+ * Si el skin no define tratamiento de color, se reutiliza la imagen original.
+ */
+export function getFruitSheetForSkin(skin: string, tint: FruitTint): CanvasImageSource | null {
+  const sheet = getFruitSheet();
+  if (!sheet) return null;
+  if (!tint.filter && !tint.overlay) return sheet;
+  if (tintedSheets[skin]) return tintedSheets[skin];
+
+  const offscreen = document.createElement("canvas");
+  offscreen.width = sheet.naturalWidth;
+  offscreen.height = sheet.naturalHeight;
+  const octx = offscreen.getContext("2d");
+  if (!octx) return sheet;
+
+  if (tint.filter) octx.filter = tint.filter;
+  octx.drawImage(sheet, 0, 0);
+  octx.filter = "none";
+
+  if (tint.overlay) {
+    octx.globalCompositeOperation = "source-atop";
+    octx.fillStyle = tint.overlay;
+    octx.fillRect(0, 0, offscreen.width, offscreen.height);
+    octx.globalCompositeOperation = "source-over";
+  }
+
+  tintedSheets[skin] = offscreen;
+  return offscreen;
 }

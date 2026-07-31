@@ -4,9 +4,18 @@ import {
   loadSpritesheet,
   drawSprite,
   drawFrame,
+  getSheet,
   EXPLOSION_FRAMES,
   EXPLOSION_DURATION,
 } from "@/lib/games/arkanoid/spritesheet";
+import {
+  ARKANOID_SKINS,
+  type ArkanoidBlockColor,
+  type ArkanoidPalette,
+} from "@/lib/games/arkanoid/skins";
+import { resolveSkin, type SkinId } from "@/lib/games/skins";
+
+const GAME_ID = "arkanoid";
 
 const PADDLE_SPEED = 400;
 const BLOCK_COLS = 10;
@@ -21,7 +30,7 @@ interface Block {
   y: number;
   w: number;
   h: number;
-  color: string;
+  color: ArkanoidBlockColor;
   alive: boolean;
 }
 
@@ -30,7 +39,7 @@ interface Explosion {
   y: number;
   w: number;
   h: number;
-  color: string;
+  color: ArkanoidBlockColor;
   elapsed: number;
 }
 
@@ -38,6 +47,8 @@ export class ArkanoidEngine implements ArcadeGameEngine {
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
   private options: ArcadeGameEngineOptions;
+  private skin: SkinId;
+  private palette: ArkanoidPalette;
 
   private paddle = { x: 0, y: 560, w: 81, h: 14 };
   private ball = { x: 0, y: 0, w: 16, h: 16, vx: BASE_BALL_VX, vy: BASE_BALL_VY };
@@ -84,6 +95,8 @@ export class ArkanoidEngine implements ArcadeGameEngine {
     this.canvas = canvas;
     this.ctx = ctx;
     this.options = options;
+    this.skin = resolveSkin(options.initialColorScheme, GAME_ID);
+    this.palette = ARKANOID_SKINS[this.skin];
     this.breakSound.volume = ArkanoidEngine.BREAK_SOUND_VOLUME;
 
     canvas.addEventListener("mousemove", this.onMouseMove);
@@ -123,6 +136,13 @@ export class ArkanoidEngine implements ArcadeGameEngine {
     this.pause();
     this.stopSounds();
     this.initGame();
+  }
+
+  setColorScheme(scheme: string) {
+    this.skin = resolveSkin(scheme, GAME_ID);
+    this.palette = ARKANOID_SKINS[this.skin];
+    // Redibuja de inmediato para que el cambio se vea también con el juego en pausa.
+    loadSpritesheet(() => this.draw());
   }
 
   destroy() {
@@ -180,7 +200,7 @@ export class ArkanoidEngine implements ArcadeGameEngine {
       y: BLOCKS_ORIGIN_Y + b.row * BLOCK_H,
       w: BLOCK_W,
       h: BLOCK_H,
-      color: b.color,
+      color: b.color as ArkanoidBlockColor,
       alive: true,
     }));
     this.explosions = [];
@@ -304,24 +324,41 @@ export class ArkanoidEngine implements ArcadeGameEngine {
     this.notifyStateChange();
   }
 
+  private applyGlow(color: string) {
+    this.ctx.shadowBlur = this.palette.glow;
+    this.ctx.shadowColor = color;
+  }
+
   private draw() {
     const ctx = this.ctx;
-    ctx.fillStyle = "#000";
+    const palette = this.palette;
+    const sheet = getSheet(this.skin);
+
+    ctx.fillStyle = palette.background;
     ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
+    ctx.save();
     for (const block of this.blocks) {
-      if (block.alive) drawSprite(ctx, "block_" + block.color, block.x, block.y, block.w, block.h);
+      if (!block.alive) continue;
+      this.applyGlow(palette.blocks[block.color]);
+      drawSprite(ctx, sheet, "block_" + block.color, block.x, block.y, block.w, block.h);
     }
 
     for (const exp of this.explosions) {
       const frameIndex = Math.min(Math.floor((exp.elapsed / EXPLOSION_DURATION) * 4), 3);
-      drawFrame(ctx, EXPLOSION_FRAMES[exp.color][frameIndex], exp.x, exp.y, exp.w, exp.h);
+      this.applyGlow(palette.blocks[exp.color]);
+      drawFrame(ctx, sheet, EXPLOSION_FRAMES[exp.color][frameIndex], exp.x, exp.y, exp.w, exp.h);
     }
 
-    drawSprite(ctx, "paddle", this.paddle.x, this.paddle.y, this.paddle.w, this.paddle.h);
-    drawSprite(ctx, "ball", this.ball.x, this.ball.y, this.ball.w, this.ball.h);
+    this.applyGlow(palette.paddle);
+    drawSprite(ctx, sheet, "paddle", this.paddle.x, this.paddle.y, this.paddle.w, this.paddle.h);
+    this.applyGlow(palette.ball);
+    drawSprite(ctx, sheet, "ball", this.ball.x, this.ball.y, this.ball.w, this.ball.h);
+    ctx.restore();
 
-    ctx.fillStyle = "#fff";
+    ctx.save();
+    this.applyGlow(palette.hud);
+    ctx.fillStyle = palette.hud;
     ctx.font = "bold 18px monospace";
     ctx.textAlign = "left";
     ctx.textBaseline = "top";
@@ -331,10 +368,12 @@ export class ArkanoidEngine implements ArcadeGameEngine {
 
     const ballSize = 16;
     const ballSpacing = 4;
+    this.applyGlow(palette.ball);
     for (let i = 0; i < this.lives; i++) {
       const bx = this.canvas.width - 10 - (this.lives - i) * (ballSize + ballSpacing);
-      drawSprite(ctx, "ball", bx, 10, ballSize, ballSize);
+      drawSprite(ctx, sheet, "ball", bx, 10, ballSize, ballSize);
     }
+    ctx.restore();
   }
 
   private loop = (ts: number) => {
