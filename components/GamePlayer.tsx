@@ -179,7 +179,17 @@ export default function GamePlayer({ game }: { game: Game }) {
             ref={canvasRef}
             width={registryEntry.width}
             height={registryEntry.height}
-            className={registryEntry.secondaryCanvas ? "game-canvas-fixed" : "game-canvas"}
+            className={`${registryEntry.secondaryCanvas ? "game-canvas-fixed" : "game-canvas"}${isTouch ? " touch-scaled-canvas" : ""}`}
+            style={
+              isTouch
+                ? {
+                    aspectRatio: `${registryEntry.width} / ${registryEntry.height}`,
+                    // Tetris (1:2) es el único juego con canvas secundario; al ser el más alto,
+                    // necesita un tope menor para dejar espacio al preview y al D-pad debajo.
+                    maxHeight: registryEntry.secondaryCanvas ? "30vh" : undefined,
+                  }
+                : undefined
+            }
           />
           {registryEntry.secondaryCanvas && (
             <canvas
