@@ -24,6 +24,8 @@ Plataforma para jugar online y competir por puntos. El desarrollo sigue Spec Dri
 - `08-arkanoid-game.md` — juego Arkanoid (`lib/games/arkanoid/engine.ts`, `levels.ts`, `spritesheet.ts`), con assets en `public/games/arkanoid/`.
 - `09-snake-game.md` — juego Snake (`lib/games/snake/engine.ts`, `fruits.ts`), con wrap-around en los bordes y frutas del atlas retro.
 
+Además existen game jams en `specs/game-jam/<slug>/`, generadas por el agente `game-jam` (ver "Agentes"): la numeración `GJ-` es local a esa carpeta y no consume la numeración correlativa global anterior. Hoy solo existe `specs/game-jam/frogger/` con dos specs en estado **Draft**, sin implementar: `01-frogger-game.md` (Frogger clásico, id `frogger`) y `02-frogger-poderes-game.md` (variante con poderes temporales, id `frogger-poderes`); ambas autocontenidas e independientes entre sí.
+
 ## Skills
 
 Se debe usar siempre `/frontend-design` para diseñar la interfaz de usuario.
@@ -76,12 +78,28 @@ Punto de extensión introducido en el SPEC 07, usado por los juegos actuales y f
 
 - `lib/games/types.ts` define la interfaz común `ArcadeGameEngine` (`start()/pause()/resume()/restart()/destroy()`, opcional `setColorScheme()`) y el estado de HUD flexible `EngineState` (`{ score, stats: { key, label, value }[] }`).
 - `lib/games/registry.ts` es el mapa `id → { width, height, secondaryCanvas?, colorSchemes?, initialState, create() }` que resuelve cada motor.
-- `components/GamePlayer.tsx` es genérico: instancia el motor a través del registry según `game.id`, renderiza el HUD desde `engineState.stats`, agrega el canvas secundario cuando la entrada lo declara (hoy solo Tetris) y el selector de esquema de color cuando hay `colorSchemes` (hoy solo Tetris). **No debe volver a hardcodear un motor específico.**
+- `components/GamePlayer.tsx` es genérico: instancia el motor a través del registry según `game.id`, renderiza el HUD desde `engineState.stats`, agrega el canvas secundario cuando la entrada lo declara (hoy solo Tetris) y el selector de esquema de color cuando hay `colorSchemes` (hoy los 4 juegos registrados: Asteroids, Tetris, Arkanoid, Snake). **No debe volver a hardcodear un motor específico.**
 - Convención para un juego nuevo: motor en `lib/games/<id>/engine.ts`, assets propios en `public/games/<id>/`, portada en una clase `.cover-<slug>` de `app/globals.css`, canvas con clase `game-canvas` (o `game-canvas-fixed` si hay canvas secundario). El motor nunca dibuja sus propios overlays de "GAME OVER"/"PAUSA"; dispara `onGameOver(finalScore)` y React controla pausa/modal.
 - La skill `/add-game` describe este mismo patrón en detalle y lo usa para generar specs de juegos nuevos.
-- Todo juego nuevo debe declarar, tarde o temprano, los 3 skins canónicos de la plataforma (`clasico`
-  default, `retro`, `neon`) vía `lib/games/skins.ts` y `lib/games/<id>/skins.ts`; ver el agente
-  `skin-designer` en "Agentes" y su memoria en `references/game-with-theme.md`.
+
+#### Skins
+
+Todo juego nuevo debe declarar, tarde o temprano, los 3 skins canónicos de la plataforma (`clasico`
+default, `retro`, `neon`). El contrato compartido vive en `lib/games/skins.ts`: tipo `SkinId`, lista
+`CANONICAL_SKINS` (`{id, label}[]`), `isSkinId()`, `skinStorageKey(gameId)` (clave de storage
+`av_color_scheme_<gameId>`, reutiliza el nombre legado de "esquema de color") y `resolveSkin(initial,
+gameId)`, que prioriza el valor recibido, luego lo guardado en `localStorage` y por último `clasico`,
+reescribiendo cualquier valor legado desconocido. Cada juego define su propia paleta en
+`lib/games/<id>/skins.ts` como `Record<SkinId, Palette>`, con un campo `glow` por skin (`0` en
+`clasico`/`retro`, típicamente `12` en `neon`, usado como `shadowBlur`). Cuando el juego dibuja desde
+un spritesheet (Arkanoid) o tiñe assets (Snake), el patrón es generar una hoja/asset teñido por skin en
+un canvas offscreen y cachearlo (`Record<SkinId, HTMLCanvasElement>` o similar) en vez de teñir en cada
+frame. Estado actual: Asteroids, Snake y Arkanoid ya migrados a este módulo compartido; **Tetris sigue
+pendiente** (conserva su propia lista `retro/normal/pastel/neon` hardcodeada en `registry.ts` y no tiene
+`lib/games/tetris/skins.ts`). El registry y `lib/games/types.ts` todavía usan la nomenclatura previa al
+sistema de skins (`colorSchemes`, `initialColorScheme`, `setColorScheme`) en vez de `SkinId`; ver el
+agente `skin-designer` en "Agentes" y su memoria en `references/game-with-theme.md` para el detalle
+juego por juego y el pendiente de Tetris.
 
 ### Supabase y migraciones
 
@@ -100,7 +118,7 @@ Punto de extensión introducido en el SPEC 07, usado por los juegos actuales y f
 
 **Código fuente de los juegos portados** (`references/started-games/`): JS original de cada juego antes de portarlo a TypeScript/Canvas (`02-asteroids`, `03-tetris`, `04-arkanoid`), fuente de verdad para nuevos ports vía `/add-game`.
 
-**Assets crudos** (`references/assest-source/`): recursos gráficos sin procesar usados como base de un motor (ej. `snake-assets/`).
+**Assets crudos** (`references/assest-source/`): recursos gráficos sin procesar usados como base de un motor (ej. `snake-assets/`, `frogger-assets/`).
 
 **Catálogo actual y memoria del planificador** (`references/implemented-games.md`, `references/game-ideas.md`, `references/game-suggestions-todo.md`): estado del catálogo de juegos y memoria/backlog que mantiene el agente `game-planner` (ver "Agentes" arriba).
 
