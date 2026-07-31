@@ -4,9 +4,11 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Game } from "@/lib/data";
 import { useAvUser } from "@/lib/useAvUser";
+import { useTouchDevice } from "@/lib/useTouchDevice";
 import { GAME_REGISTRY } from "@/lib/games/registry";
 import type { ArcadeGameEngine, EngineState } from "@/lib/games/types";
 import { saveScore as saveScoreRemote } from "@/lib/scores";
+import TouchControls from "@/components/TouchControls";
 
 function getSavedPlayerName(): string | null {
   try {
@@ -27,6 +29,7 @@ function getStoredColorScheme(gameId: string): string | null {
 export default function GamePlayer({ game }: { game: Game }) {
   const router = useRouter();
   const user = useAvUser();
+  const isTouch = useTouchDevice();
   const displayName = user ? user.name : "INVITADO";
   const [paused, setPaused] = useState(false);
   const [over, setOver] = useState(false);
@@ -121,7 +124,7 @@ export default function GamePlayer({ game }: { game: Game }) {
   };
 
   return (
-    <div className="av-player fade-in">
+    <div className={`av-player fade-in${isTouch ? " touch-mode" : ""}`}>
       <div className="player-hud">
         <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
           <div className="hud-stat">
@@ -214,6 +217,10 @@ export default function GamePlayer({ game }: { game: Game }) {
           <span>CARGA · 1MB</span>
         </div>
       </div>
+
+      {isTouch && registryEntry.touchControls && (
+        <TouchControls config={registryEntry.touchControls} />
+      )}
 
       {over && (
         <div className="modal-bd">

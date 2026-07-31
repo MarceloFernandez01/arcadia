@@ -3,13 +3,19 @@ import { AsteroidsEngine } from "@/lib/games/asteroids/engine";
 import { SnakeEngine } from "@/lib/games/snake/engine";
 import { CANONICAL_SKINS } from "@/lib/games/skins";
 import { TetrisEngine } from "@/lib/games/tetris/engine";
-import type { ArcadeGameEngine, ArcadeGameEngineOptions, EngineState } from "@/lib/games/types";
+import type {
+  ArcadeGameEngine,
+  ArcadeGameEngineOptions,
+  EngineState,
+  TouchControlsConfig,
+} from "@/lib/games/types";
 
 export interface GameRegistryEntry {
   width: number;
   height: number;
   secondaryCanvas?: { width: number; height: number; label: string };
   colorSchemes?: { id: string; label: string }[];
+  touchControls?: TouchControlsConfig;
   initialState: EngineState;
   create(
     canvas: HTMLCanvasElement,
@@ -23,6 +29,13 @@ export const GAME_REGISTRY: Record<string, GameRegistryEntry> = {
     width: 800,
     height: 600,
     colorSchemes: CANONICAL_SKINS,
+    touchControls: {
+      dpadEnabled: ["left", "right"],
+      actions: [
+        { code: "ArrowUp", key: "ArrowUp", label: "AVANZAR" },
+        { code: "Space", key: " ", label: "DISPARAR", repeat: true },
+      ],
+    },
     initialState: {
       score: 0,
       stats: [
@@ -56,6 +69,14 @@ export const GAME_REGISTRY: Record<string, GameRegistryEntry> = {
       { id: "pastel", label: "Pastel" },
       { id: "neon", label: "Neón" },
     ],
+    touchControls: {
+      dpadEnabled: ["left", "right", "down"],
+      dpadRepeat: true,
+      actions: [
+        { code: "ArrowUp", key: "ArrowUp", label: "ROTAR" },
+        { code: "Space", key: " ", label: "CAÍDA DURA" },
+      ],
+    },
     initialState: {
       score: 0,
       stats: [
@@ -74,6 +95,10 @@ export const GAME_REGISTRY: Record<string, GameRegistryEntry> = {
     width: 800,
     height: 600,
     colorSchemes: CANONICAL_SKINS,
+    touchControls: {
+      dpadEnabled: ["left", "right"],
+      actions: [],
+    },
     initialState: {
       score: 0,
       stats: [
@@ -89,6 +114,10 @@ export const GAME_REGISTRY: Record<string, GameRegistryEntry> = {
     width: 600,
     height: 600,
     colorSchemes: CANONICAL_SKINS,
+    touchControls: {
+      dpadEnabled: ["up", "down", "left", "right"],
+      actions: [],
+    },
     initialState: {
       score: 0,
       stats: [{ key: "length", label: "Longitud", value: "1" }],
