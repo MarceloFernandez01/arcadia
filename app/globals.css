@@ -1156,6 +1156,12 @@ a {
   flex-direction: column;
   align-items: center;
 }
+.av-player.touch-mode .crt-screen:has(.next-piece-canvas) {
+  flex-direction: row;
+  align-items: flex-start;
+  justify-content: center;
+  gap: clamp(8px, 3vw, 16px);
+}
 
 .av-player.touch-mode .touch-scaled-canvas {
   position: static;
@@ -1173,7 +1179,7 @@ a {
   position: static;
   left: auto;
   top: auto;
-  margin-top: 8px;
+  margin-top: 0;
   width: auto;
   height: auto;
   max-width: clamp(56px, 22vw, 90px);
