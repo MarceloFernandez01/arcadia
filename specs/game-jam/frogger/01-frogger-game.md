@@ -1,6 +1,6 @@
 # SPEC GJ-frogger-01 — Juego Frogger (base)
 
-> **Estado:** Draft
+> **Estado:** Aprobado
 > **Depende de:** SPEC 05 (asteroids-game), SPEC 06 (leaderboard-supabase), SPEC 07 (tetris-game)
 > **Fecha:** 2026-07-29
 > **Objetivo:** Implementar el Frogger clásico de Konami como motor real en TypeScript/Canvas bajo el id `frogger`, con carretera de cinco carriles, río de cinco filas de troncos y tortugas, cinco casillas de llegada y temporizador por rana, dado de alta en `lib/games/registry.ts` y en Supabase para que aparezca en el Salón de la Fama.
