@@ -52,6 +52,10 @@ export default function GamePlayer({ game }: { game: Game }) {
   }, [game.id]);
 
   useEffect(() => {
+    if (isTouch) window.scrollTo(0, 0);
+  }, [isTouch]);
+
+  useEffect(() => {
     if (!canvasRef.current) return;
 
     const engine = registryEntry.create(
@@ -203,7 +207,7 @@ export default function GamePlayer({ game }: { game: Game }) {
             ref={canvasRef}
             width={registryEntry.width}
             height={registryEntry.height}
-            className={`${registryEntry.secondaryCanvas ? "game-canvas-fixed" : "game-canvas"}${isTouch ? " touch-scaled-canvas" : ""}`}
+            className={`${registryEntry.secondaryCanvas ? "game-canvas-fixed" : "game-canvas"}${isTouch ? " touch-scaled-canvas" : ""}${isTouch && registryEntry.width === registryEntry.height ? " touch-square-canvas" : ""}`}
             style={
               isTouch
                 ? {
@@ -224,69 +228,25 @@ export default function GamePlayer({ game }: { game: Game }) {
               aria-label={registryEntry.secondaryCanvas.label}
             />
           )}
-          {paused && isTouch && pauseMenuOpen ? (
+          {paused && !isTouch && (
             <div className="crt-content" style={{ background: "rgba(0,0,0,0.6)", zIndex: 5 }}>
-              <div className="pause-menu-mobile">
-                <div className="pixel neon-yellow" style={{ fontSize: 18 }}>
+              <div>
+                <div className="pixel neon-yellow" style={{ fontSize: 22 }}>
                   EN PAUSA
                 </div>
-                {registryEntry.colorSchemes && (
-                  <div className="hud-stat" style={{ marginTop: 16 }}>
-                    <div className="l">Esquema</div>
-                    <select
-                      className="scheme-select"
-                      value={colorScheme}
-                      onChange={(e) => changeColorScheme(e.target.value)}
-                    >
-                      {registryEntry.colorSchemes.map((scheme) => (
-                        <option key={scheme.id} value={scheme.id}>
-                          {scheme.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                )}
                 <div
+                  className="mono"
                   style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 10,
-                    marginTop: 16,
+                    fontSize: 11,
+                    color: "var(--ink-dim)",
+                    marginTop: 10,
+                    letterSpacing: "0.16em",
                   }}
                 >
-                  <button className="btn yellow" onClick={resumeFromPauseMenu}>
-                    REANUDAR
-                  </button>
-                  <button className="btn magenta" onClick={endGame}>
-                    FIN
-                  </button>
-                  <button className="btn ghost" onClick={() => router.push(`/juego/${game.id}`)}>
-                    SALIR
-                  </button>
+                  PULSA REANUDAR PARA CONTINUAR
                 </div>
               </div>
             </div>
-          ) : (
-            paused && (
-              <div className="crt-content" style={{ background: "rgba(0,0,0,0.6)", zIndex: 5 }}>
-                <div>
-                  <div className="pixel neon-yellow" style={{ fontSize: 22 }}>
-                    EN PAUSA
-                  </div>
-                  <div
-                    className="mono"
-                    style={{
-                      fontSize: 11,
-                      color: "var(--ink-dim)",
-                      marginTop: 10,
-                      letterSpacing: "0.16em",
-                    }}
-                  >
-                    PULSA REANUDAR PARA CONTINUAR
-                  </div>
-                </div>
-              </div>
-            )
           )}
         </div>
         <div className="crt-bottom">
@@ -298,6 +258,50 @@ export default function GamePlayer({ game }: { game: Game }) {
 
       {isTouch && registryEntry.touchControls && (
         <TouchControls config={registryEntry.touchControls} />
+      )}
+
+      {paused && isTouch && pauseMenuOpen && (
+        <div className="pause-overlay-mobile">
+          <div className="pause-menu-mobile">
+            <div className="pixel neon-yellow" style={{ fontSize: 18 }}>
+              EN PAUSA
+            </div>
+            {registryEntry.colorSchemes && (
+              <div className="hud-stat" style={{ marginTop: 16 }}>
+                <div className="l">Esquema</div>
+                <select
+                  className="scheme-select"
+                  value={colorScheme}
+                  onChange={(e) => changeColorScheme(e.target.value)}
+                >
+                  {registryEntry.colorSchemes.map((scheme) => (
+                    <option key={scheme.id} value={scheme.id}>
+                      {scheme.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 10,
+                marginTop: 16,
+              }}
+            >
+              <button className="btn yellow" onClick={resumeFromPauseMenu}>
+                REANUDAR
+              </button>
+              <button className="btn magenta" onClick={endGame}>
+                FIN
+              </button>
+              <button className="btn ghost" onClick={() => router.push(`/juego/${game.id}`)}>
+                SALIR
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {over && (

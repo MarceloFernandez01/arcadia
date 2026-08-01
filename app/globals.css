@@ -1146,9 +1146,20 @@ a {
   gap: clamp(6px, 2vw, 10px);
 }
 
+.pause-overlay-mobile {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
 .av-player.touch-mode .pause-menu-mobile {
   width: 100%;
-  max-width: 200px;
+  max-width: min(320px, 90vw);
   text-align: center;
 }
 
@@ -1176,6 +1187,10 @@ a {
   height: auto;
   max-width: 100%;
   max-height: 34vh;
+}
+
+.av-player.touch-mode .touch-square-canvas {
+  max-height: 30vh;
 }
 
 .av-player.touch-mode .next-piece-canvas {
@@ -1276,6 +1291,9 @@ a {
   .av-player.touch-mode .touch-scaled-canvas {
     max-height: 26vh;
   }
+  .av-player.touch-mode .touch-square-canvas {
+    max-height: 22vh;
+  }
   .av-player.touch-mode .next-piece-canvas {
     max-width: clamp(48px, 18vw, 72px);
     max-height: clamp(48px, 18vw, 72px);
@@ -1296,6 +1314,22 @@ a {
     height: clamp(44px, 14vw, 60px);
     font-size: clamp(7px, 1.6vw, 9px);
   }
+}
+
+.av-player.touch-mode .modal {
+  padding: clamp(16px, 5vw, 32px);
+}
+.av-player.touch-mode .modal h2 {
+  font-size: clamp(16px, 4.5vw, 22px);
+}
+.av-player.touch-mode .modal .final {
+  font-size: clamp(24px, 7vw, 36px);
+}
+.av-player.touch-mode .modal .input-row {
+  flex-direction: column;
+}
+.av-player.touch-mode .modal .input-row .btn {
+  width: 100%;
 }
 
 /* game over modal */
