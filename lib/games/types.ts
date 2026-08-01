@@ -23,3 +23,16 @@ export interface ArcadeGameEngine {
   destroy(): void;
   setColorScheme?(scheme: string): void;
 }
+
+export interface TouchButton {
+  code: string;
+  key: string;
+  label: string;
+  repeat?: boolean;
+}
+
+export interface TouchControlsConfig {
+  dpadEnabled: ("up" | "down" | "left" | "right")[];
+  dpadRepeat?: boolean;
+  actions: TouchButton[];
+}

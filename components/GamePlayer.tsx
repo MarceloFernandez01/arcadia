@@ -4,9 +4,11 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Game } from "@/lib/data";
 import { useAvUser } from "@/lib/useAvUser";
+import { useTouchDevice } from "@/lib/useTouchDevice";
 import { GAME_REGISTRY } from "@/lib/games/registry";
 import type { ArcadeGameEngine, EngineState } from "@/lib/games/types";
 import { saveScore as saveScoreRemote } from "@/lib/scores";
+import TouchControls from "@/components/TouchControls";
 
 function getSavedPlayerName(): string | null {
   try {
@@ -27,8 +29,10 @@ function getStoredColorScheme(gameId: string): string | null {
 export default function GamePlayer({ game }: { game: Game }) {
   const router = useRouter();
   const user = useAvUser();
+  const isTouch = useTouchDevice();
   const displayName = user ? user.name : "INVITADO";
   const [paused, setPaused] = useState(false);
+  const [pauseMenuOpen, setPauseMenuOpen] = useState(false);
   const [over, setOver] = useState(false);
   const [name, setName] = useState(displayName);
   const [saved, setSaved] = useState(false);
@@ -46,6 +50,10 @@ export default function GamePlayer({ game }: { game: Game }) {
     const stored = getStoredColorScheme(game.id);
     if (stored) setColorScheme(stored);
   }, [game.id]);
+
+  useEffect(() => {
+    if (isTouch) window.scrollTo(0, 0);
+  }, [isTouch]);
 
   useEffect(() => {
     if (!canvasRef.current) return;
@@ -95,6 +103,18 @@ export default function GamePlayer({ game }: { game: Game }) {
     });
   };
 
+  const openPauseMenu = () => {
+    engineRef.current?.pause();
+    setPaused(true);
+    setPauseMenuOpen(true);
+  };
+
+  const resumeFromPauseMenu = () => {
+    engineRef.current?.resume();
+    setPaused(false);
+    setPauseMenuOpen(false);
+  };
+
   const endGame = () => {
     engineRef.current?.pause();
     setFinalScore(engineState.score);
@@ -106,6 +126,7 @@ export default function GamePlayer({ game }: { game: Game }) {
     engineRef.current?.restart();
     engineRef.current?.start();
     setPaused(false);
+    setPauseMenuOpen(false);
     setOver(false);
     setSaved(false);
   };
@@ -121,15 +142,17 @@ export default function GamePlayer({ game }: { game: Game }) {
   };
 
   return (
-    <div className="av-player fade-in">
+    <div className={`av-player fade-in${isTouch ? " touch-mode" : ""}`}>
       <div className="player-hud">
         <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
-          <div className="hud-stat">
-            <div className="l">Jugador</div>
-            <div className="v" style={{ color: "var(--ink)" }}>
-              {name}
+          {!isTouch && (
+            <div className="hud-stat">
+              <div className="l">Jugador</div>
+              <div className="v" style={{ color: "var(--ink)" }}>
+                {name}
+              </div>
             </div>
-          </div>
+          )}
           <div className="hud-stat">
             <div className="l">Puntuación</div>
             <div className="v">{engineState.score}</div>
@@ -141,7 +164,7 @@ export default function GamePlayer({ game }: { game: Game }) {
             </div>
           ))}
         </div>
-        {registryEntry.colorSchemes && (
+        {registryEntry.colorSchemes && !isTouch && (
           <div className="hud-stat">
             <div className="l">Esquema</div>
             <select
@@ -157,17 +180,25 @@ export default function GamePlayer({ game }: { game: Game }) {
             </select>
           </div>
         )}
-        <div className="hud-actions">
-          <button className="btn yellow" onClick={togglePause}>
-            {paused ? "REANUDAR" : "PAUSA"}
-          </button>
-          <button className="btn magenta" onClick={endGame}>
-            FIN
-          </button>
-          <button className="btn ghost" onClick={() => router.push(`/juego/${game.id}`)}>
-            SALIR
-          </button>
-        </div>
+        {isTouch ? (
+          <div className="hud-actions">
+            <button className="btn yellow" onClick={openPauseMenu}>
+              PAUSA
+            </button>
+          </div>
+        ) : (
+          <div className="hud-actions">
+            <button className="btn yellow" onClick={togglePause}>
+              {paused ? "REANUDAR" : "PAUSA"}
+            </button>
+            <button className="btn magenta" onClick={endGame}>
+              FIN
+            </button>
+            <button className="btn ghost" onClick={() => router.push(`/juego/${game.id}`)}>
+              SALIR
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="crt">
@@ -176,7 +207,17 @@ export default function GamePlayer({ game }: { game: Game }) {
             ref={canvasRef}
             width={registryEntry.width}
             height={registryEntry.height}
-            className={registryEntry.secondaryCanvas ? "game-canvas-fixed" : "game-canvas"}
+            className={`${registryEntry.secondaryCanvas ? "game-canvas-fixed" : "game-canvas"}${isTouch ? " touch-scaled-canvas" : ""}${isTouch && registryEntry.width === registryEntry.height ? " touch-square-canvas" : ""}`}
+            style={
+              isTouch
+                ? {
+                    aspectRatio: `${registryEntry.width} / ${registryEntry.height}`,
+                    // Tetris (1:2) es el único juego con canvas secundario; al ser el más alto,
+                    // necesita un tope menor para dejar espacio al preview y al D-pad debajo.
+                    maxHeight: registryEntry.secondaryCanvas ? "30vh" : undefined,
+                  }
+                : undefined
+            }
           />
           {registryEntry.secondaryCanvas && (
             <canvas
@@ -187,7 +228,7 @@ export default function GamePlayer({ game }: { game: Game }) {
               aria-label={registryEntry.secondaryCanvas.label}
             />
           )}
-          {paused && (
+          {paused && !isTouch && (
             <div className="crt-content" style={{ background: "rgba(0,0,0,0.6)", zIndex: 5 }}>
               <div>
                 <div className="pixel neon-yellow" style={{ fontSize: 22 }}>
@@ -214,6 +255,54 @@ export default function GamePlayer({ game }: { game: Game }) {
           <span>CARGA · 1MB</span>
         </div>
       </div>
+
+      {isTouch && registryEntry.touchControls && (
+        <TouchControls config={registryEntry.touchControls} />
+      )}
+
+      {paused && isTouch && pauseMenuOpen && (
+        <div className="pause-overlay-mobile">
+          <div className="pause-menu-mobile">
+            <div className="pixel neon-yellow" style={{ fontSize: 18 }}>
+              EN PAUSA
+            </div>
+            {registryEntry.colorSchemes && (
+              <div className="hud-stat" style={{ marginTop: 16 }}>
+                <div className="l">Esquema</div>
+                <select
+                  className="scheme-select"
+                  value={colorScheme}
+                  onChange={(e) => changeColorScheme(e.target.value)}
+                >
+                  {registryEntry.colorSchemes.map((scheme) => (
+                    <option key={scheme.id} value={scheme.id}>
+                      {scheme.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 10,
+                marginTop: 16,
+              }}
+            >
+              <button className="btn yellow" onClick={resumeFromPauseMenu}>
+                REANUDAR
+              </button>
+              <button className="btn magenta" onClick={endGame}>
+                FIN
+              </button>
+              <button className="btn ghost" onClick={() => router.push(`/juego/${game.id}`)}>
+                SALIR
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {over && (
         <div className="modal-bd">
