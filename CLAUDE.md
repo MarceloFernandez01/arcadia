@@ -35,6 +35,7 @@ Flujo de Spec Driven Design (skills globales en `~/.claude/skills/`):
 - `/spec` — genera specs sección por sección con confirmación del usuario, sin escribir código.
 - `/spec-impl` — implementa un spec ya aprobado.
 - `/add-game` (skill de proyecto en `.claude/skills/add-game/SKILL.md`) — genera el spec de un juego nuevo con leaderboard (`specs/NN-<slug>.md`) siguiendo el patrón de los specs 05–09; no escribe código, no toca Supabase ni ejecuta migraciones.
+- `/spec-impl-game` (skill de proyecto en `.claude/skills/spec-impl-game/SKILL.md`) — variante de `/spec-impl` para specs que agregan un juego nuevo: sigue el mismo lineamiento (valida estado "Aprobado", crea rama, implementa paso a paso) y, al terminar y con `npm run build` limpio, encadena en serie (nunca en paralelo) los agentes `skin-designer` y luego `mobile-porter` sobre el juego recién implementado.
 
 ## Agentes
 
