@@ -59,6 +59,16 @@ Flujo de Spec Driven Design (skills globales en `~/.claude/skills/`):
   código: crea `lib/games/skins.ts` y `lib/games/<id>/skins.ts`, refactoriza el `engine.ts` del juego
   indicado y verifica el resultado con capturas de Playwright. Mantiene memoria en
   `references/game-with-theme.md`.
+- `mobile-porter` (`.claude/agents/mobile-porter.md`) — revisa y corrige la adaptación a navegador
+  móvil de un juego o un elemento/página concreto (ej. "menú principal", "salón", un juego puntual),
+  uno por invocación. Si no se le indica un objetivo, reporta pendientes desde
+  `references/mobile-review-log.md` y se detiene. Toma como fuente de convenciones ya acordadas los
+  specs `10-controles-tactiles-moviles.md` y `11-refinamiento-hud-movil.md`. Sí escribe código
+  (CSS/TSX), pero audita de forma **estática** (lectura de código y CSS contra los anchos 360/375/414px,
+  sin Playwright ni navegador); la comprobación visual final queda a cargo del usuario en un
+  dispositivo real. Su alcance es exclusivamente navegador móvil (no agrega PWA, manifest, service
+  worker ni ningún wrapper nativo tipo Capacitor). Mantiene memoria en
+  `references/mobile-review-log.md`.
 
 ## Dev server
 
