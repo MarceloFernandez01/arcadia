@@ -68,7 +68,11 @@ Flujo de Spec Driven Design (skills globales en `~/.claude/skills/`):
   (CSS/TSX), pero audita de forma **estática** (lectura de código y CSS contra los anchos 360/375/414px,
   sin Playwright ni navegador); la comprobación visual final queda a cargo del usuario en un
   dispositivo real. Su alcance es exclusivamente navegador móvil (no agrega PWA, manifest, service
-  worker ni ningún wrapper nativo tipo Capacitor). Mantiene memoria en
+  worker ni ningún wrapper nativo tipo Capacitor). En un juego, siempre garantiza controles táctiles
+  jugables (agrega `touchControls` al registry aunque el spec del juego los omita o los declare fuera
+  de alcance, y puede sumar un binding de teclado faltante al motor solo para habilitar un botón) y que
+  el HUD del reproductor quede en una sola línea a 360px (con una escalera de recursos que llega hasta
+  abreviar etiquetas en modo táctil como último recurso, solo en táctil). Mantiene memoria en
   `references/mobile-review-log.md`.
 
 ## Dev server

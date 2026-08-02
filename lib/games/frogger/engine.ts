@@ -7,8 +7,11 @@ import {
   LEVEL_TIME_MS,
   type LaneDef,
 } from "@/lib/games/frogger/lanes";
+import { FROGGER_SKINS, type FroggerPalette } from "@/lib/games/frogger/skins";
+import { resolveSkin, type SkinId } from "@/lib/games/skins";
 import type { ArcadeGameEngine, ArcadeGameEngineOptions, EngineState } from "@/lib/games/types";
 
+const GAME_ID = "frogger";
 const CANVAS_WIDTH = GRID_COLS * CELL_SIZE;
 const CANVAS_HEIGHT = GRID_ROWS * CELL_SIZE;
 const START_COL = Math.floor(GRID_COLS / 2);
@@ -18,36 +21,8 @@ const TOTAL_LIVES = 3;
 const TOTAL_HOMES = 5;
 const HOME_SLOT_COLS = [0, 3, 6, 9, 12];
 
-const PALETTE = {
-  background: "#0a0a18",
-  road: "#1c1c26",
-  roadLine: "#3a3a46",
-  river: "#0b2e52",
-  riverGlow: "#0ea5c9",
-  safe: "#12321f",
-  hedge: "#0a2015",
-  homeOpen: "#1f8a4c",
-  homeOpenBorder: "#4ade80",
-  frog: "#22c55e",
-  frogEye: "#eab308",
-  log: "#6b4a35",
-  logBorder: "#2e1c10",
-  turtle: "#2f9e44",
-  turtleShell: "#1f6e2e",
-  turtleWarn: "#8a5a1f",
-  turtleSubmerged: "#0e4a63",
-  cyan: "#00f5ff",
-  magenta: "#ff006e",
-  yellow: "#f5ff00",
-};
-
-const ROAD_COLORS: Record<number, string> = {
-  7: PALETTE.magenta,
-  8: PALETTE.yellow,
-  9: PALETTE.cyan,
-  10: PALETTE.magenta,
-  11: PALETTE.yellow,
-};
+/** Índice dentro de `palette.vehicles` para cada carril de vehículos. */
+const ROAD_COLOR_INDEX: Record<number, number> = { 7: 0, 8: 1, 9: 2, 10: 0, 11: 1 };
 
 const HOP_DURATION_MS = 100;
 
@@ -95,6 +70,8 @@ interface Frog {
 export class FroggerEngine implements ArcadeGameEngine {
   private ctx: CanvasRenderingContext2D;
   private options: ArcadeGameEngineOptions;
+  private skin: SkinId;
+  private palette: FroggerPalette;
 
   private frog!: Frog;
   private laneObjects!: LaneObject[][];
@@ -130,6 +107,8 @@ export class FroggerEngine implements ArcadeGameEngine {
     if (!ctx) throw new Error("No se pudo obtener el contexto 2D del canvas");
     this.ctx = ctx;
     this.options = options;
+    this.skin = resolveSkin(options.initialColorScheme, GAME_ID);
+    this.palette = FROGGER_SKINS[this.skin];
 
     window.addEventListener("keydown", this.onKeyDown);
 
@@ -161,6 +140,13 @@ export class FroggerEngine implements ArcadeGameEngine {
   restart() {
     this.pause();
     this.initGame();
+  }
+
+  setColorScheme(scheme: string) {
+    this.skin = resolveSkin(scheme, GAME_ID);
+    this.palette = FROGGER_SKINS[this.skin];
+    // Redibuja de inmediato para que el cambio se vea también con el juego en pausa.
+    this.draw();
   }
 
   destroy() {
@@ -419,26 +405,37 @@ export class FroggerEngine implements ArcadeGameEngine {
     }
   }
 
+  /** Activa el resplandor del skin; con `glow: 0` no altera el trazo. */
+  private applyGlow(color: string) {
+    this.ctx.shadowBlur = this.palette.glow;
+    this.ctx.shadowColor = color;
+  }
+
+  private clearGlow() {
+    this.ctx.shadowBlur = 0;
+  }
+
   private drawBoard() {
     const ctx = this.ctx;
-    ctx.fillStyle = PALETTE.background;
+    const palette = this.palette;
+    ctx.fillStyle = palette.background;
     ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
     for (const lane of LANES) {
       const y = lane.row * CELL_SIZE;
       if (lane.kind === "home") {
-        ctx.fillStyle = PALETTE.safe;
+        ctx.fillStyle = palette.safe;
         ctx.fillRect(0, y, CANVAS_WIDTH, CELL_SIZE);
       } else if (lane.kind === "log" || lane.kind === "turtle") {
-        ctx.fillStyle = PALETTE.river;
+        ctx.fillStyle = palette.river;
         ctx.fillRect(0, y, CANVAS_WIDTH, CELL_SIZE);
       } else if (lane.kind === "safe") {
-        ctx.fillStyle = PALETTE.safe;
+        ctx.fillStyle = palette.safe;
         ctx.fillRect(0, y, CANVAS_WIDTH, CELL_SIZE);
       } else if (lane.kind === "road") {
-        ctx.fillStyle = PALETTE.road;
+        ctx.fillStyle = palette.road;
         ctx.fillRect(0, y, CANVAS_WIDTH, CELL_SIZE);
-        ctx.strokeStyle = PALETTE.roadLine;
+        ctx.strokeStyle = palette.roadLine;
         ctx.setLineDash([12, 10]);
         ctx.beginPath();
         ctx.moveTo(0, y + CELL_SIZE);
@@ -453,25 +450,30 @@ export class FroggerEngine implements ArcadeGameEngine {
 
   private drawHomeSlots() {
     const ctx = this.ctx;
+    const palette = this.palette;
     const y = 0;
     for (let col = 0; col < GRID_COLS; col++) {
       if (HOME_SLOT_COLS.includes(col)) continue;
-      ctx.fillStyle = PALETTE.hedge;
+      ctx.fillStyle = palette.hedge;
       ctx.fillRect(col * CELL_SIZE, y, CELL_SIZE, CELL_SIZE);
     }
     HOME_SLOT_COLS.forEach((col, i) => {
       const x = col * CELL_SIZE;
-      ctx.fillStyle = PALETTE.homeOpen;
+      ctx.fillStyle = palette.homeOpen;
       ctx.fillRect(x + 3, y + 3, CELL_SIZE - 6, CELL_SIZE - 6);
-      ctx.strokeStyle = PALETTE.homeOpenBorder;
+      ctx.strokeStyle = palette.homeOpenBorder;
       ctx.lineWidth = 2;
+      this.applyGlow(palette.homeOpenBorder);
       ctx.strokeRect(x + 3, y + 3, CELL_SIZE - 6, CELL_SIZE - 6);
+      this.clearGlow();
       if (this.homesOccupied[i]) {
         const cx = x + CELL_SIZE / 2;
         const cy = y + CELL_SIZE / 2;
-        ctx.fillStyle = PALETTE.frog;
+        ctx.fillStyle = palette.frog;
+        this.applyGlow(palette.frog);
         ctx.fillRect(cx - 11, cy - 11, 22, 22);
-        ctx.fillStyle = PALETTE.frogEye;
+        this.clearGlow();
+        ctx.fillStyle = palette.frogEye;
         ctx.fillRect(cx - 8, cy - 8, 4, 4);
         ctx.fillRect(cx + 4, cy - 8, 4, 4);
       }
@@ -485,45 +487,58 @@ export class FroggerEngine implements ArcadeGameEngine {
     const y = TIMER_ROW * CELL_SIZE;
     const trackHeight = CELL_SIZE - 16;
     const trackY = y + 8;
-    ctx.fillStyle = PALETTE.hedge;
+    ctx.fillStyle = this.palette.timerTrack;
     ctx.fillRect(8, trackY, CANVAS_WIDTH - 16, trackHeight);
     // La barra se acorta de derecha a izquierda: el extremo izquierdo queda fijo
     // y el ancho visible se reduce a medida que se consume el tiempo restante.
     const barWidth = (CANVAS_WIDTH - 16) * ratio;
-    ctx.fillStyle = ratio < 0.25 ? PALETTE.magenta : PALETTE.cyan;
+    const barColor = ratio < 0.25 ? this.palette.timerLow : this.palette.timerFull;
+    ctx.fillStyle = barColor;
+    this.applyGlow(barColor);
     ctx.fillRect(8, trackY, barWidth, trackHeight);
+    this.clearGlow();
   }
 
   private drawFrog() {
     const ctx = this.ctx;
+    const palette = this.palette;
     const { cx, cy } = this.frogDrawPosition();
-    ctx.fillStyle = PALETTE.frog;
+    ctx.fillStyle = palette.frog;
+    this.applyGlow(palette.frog);
     ctx.fillRect(cx - 14, cy - 14, 28, 28);
-    ctx.fillStyle = PALETTE.frogEye;
+    this.clearGlow();
+    ctx.fillStyle = palette.frogEye;
     ctx.fillRect(cx - 10, cy - 10, 5, 5);
     ctx.fillRect(cx + 5, cy - 10, 5, 5);
   }
 
   private drawLaneObjects() {
     const ctx = this.ctx;
+    const palette = this.palette;
     for (const lane of LANES) {
       const objects = this.laneObjects[lane.row];
       if (objects.length === 0) continue;
       const y = lane.row * CELL_SIZE;
       const height = CELL_SIZE - 8;
       if (lane.kind === "road") {
-        ctx.fillStyle = ROAD_COLORS[lane.row] ?? PALETTE.cyan;
+        const vehicleColor =
+          palette.vehicles[(ROAD_COLOR_INDEX[lane.row] ?? 0) % palette.vehicles.length];
+        ctx.fillStyle = vehicleColor;
+        this.applyGlow(vehicleColor);
         for (const obj of objects) {
           ctx.fillRect(obj.x, y + 4, obj.width, height);
         }
+        this.clearGlow();
       } else if (lane.kind === "log") {
-        ctx.fillStyle = PALETTE.log;
-        ctx.strokeStyle = PALETTE.logBorder;
+        ctx.fillStyle = palette.log;
+        ctx.strokeStyle = palette.logBorder;
         ctx.lineWidth = 2;
+        this.applyGlow(palette.log);
         for (const obj of objects) {
           ctx.fillRect(obj.x, y + 4, obj.width, height);
           ctx.strokeRect(obj.x, y + 4, obj.width, height);
         }
+        this.clearGlow();
       } else if (lane.kind === "turtle") {
         const inset = 6;
         const turtleHeight = height - 8;
@@ -533,15 +548,20 @@ export class FroggerEngine implements ArcadeGameEngine {
           const phase = obj.phaseMs ?? 0;
           const warning = !obj.submerged && phase >= floatEnd;
           if (obj.submerged) {
-            ctx.strokeStyle = PALETTE.turtleSubmerged;
+            ctx.strokeStyle = palette.turtleSubmerged;
             ctx.lineWidth = 1;
+            this.applyGlow(palette.turtleSubmerged);
             ctx.strokeRect(obj.x + inset, y + 8, obj.width - inset * 2, turtleHeight);
+            this.clearGlow();
             continue;
           }
           const blinkOn = Math.floor(phase / 150) % 2 === 0;
-          ctx.fillStyle = warning && !blinkOn ? PALETTE.turtleWarn : PALETTE.turtle;
+          const bodyColor = warning && !blinkOn ? palette.turtleWarn : palette.turtle;
+          ctx.fillStyle = bodyColor;
+          this.applyGlow(bodyColor);
           ctx.fillRect(obj.x + inset, y + 8, obj.width - inset * 2, turtleHeight);
-          ctx.fillStyle = PALETTE.turtleShell;
+          this.clearGlow();
+          ctx.fillStyle = palette.turtleShell;
           ctx.fillRect(obj.x + inset + 3, y + 11, obj.width - inset * 2 - 6, turtleHeight - 6);
         }
       }

@@ -46,7 +46,6 @@ Frogger ya estaba en el backlog del agente `game-planner` (`references/game-sugg
 
 - Sin multijugador y sin progresión persistente entre partidas.
 - Sin audio ni efectos de sonido.
-- Sin controles táctiles/móviles.
 - Sin cocodrilos en el río, serpientes en la mediana, nutrias, rana hembra ni cocodrilo asomando en una casilla (extras del original en niveles altos; suben el costo del motor sin cambiar el bucle).
 - Sin mosca bonus en las casillas: se descarta en la versión base para mantener el motor mínimo (ver Decisiones).
 - Sin power-ups ni modificadores temporales — eso es el spec `02-frogger-poderes-game.md`, que es un juego aparte.
@@ -119,6 +118,7 @@ Espaciado entre objetos de la misma fila: constante por fila, expresado en celda
 - `←` / `→` / `↑` / `↓` y `A` / `D` / `W` / `S`: salto de una celda en esa dirección.
 - Ninguna otra tecla tiene efecto. En particular, no hay tecla de pausa ni de reinicio: la pausa la controla el botón "PAUSA" del `player-hud` y el reinicio el botón "JUGAR DE NUEVO" del modal.
 - `preventDefault()` en las flechas para que la página no haga scroll durante la partida.
+- Táctil/móvil: D-pad de 4 direcciones (`touchControls.dpadEnabled: ["up", "down", "left", "right"]` en `lib/games/registry.ts`, sin `actions`), con `dpadRepeat: true` — mantener presionada una dirección repite el salto cada 120 ms. El motor no distingue el origen del `KeyboardEvent`: el D-pad dispara `ArrowUp/Down/Left/Right` sintéticos sobre `window`, el mismo camino que ya escucha `onKeyDown`.
 
 ### HUD y estética
 
@@ -273,6 +273,7 @@ values (
 - **No:** modelar el río con física continua o con rebotes. Las filas son cintas de objetos a velocidad constante con reciclado cíclico: determinista, barato y suficiente.
 - **Sí:** canvas de 520×560 (13×14 celdas de 40 px). Mantiene la proporción vertical del original y el tamaño de celda es cómodo para dibujar la rana sin sprites; queda entre los tamaños ya usados (300×600 de Tetris y 600×600 de Snake).
 - **No:** tecla de pausa dentro del motor. Misma decisión que en Tetris y Snake: la pausa es responsabilidad del botón "PAUSA" de React, y dos mecanismos quedarían fuera de sincronía.
+- **Sí:** D-pad táctil de 4 direcciones con `dpadRepeat: true`, agregado después de la implementación inicial (que lo había dejado fuera de alcance). El sistema de controles táctiles ya existente (`components/TouchControls.tsx`) es genérico: dispara los mismos `KeyboardEvent` de flechas que el motor ya escucha, así que no requirió cambios en `engine.ts`, solo declarar `touchControls` en `lib/games/registry.ts`, igual que Snake. Se activa `dpadRepeat` (a diferencia de Snake) porque el salto es una acción discreta por pulsación y no un movimiento continuo: sin repetición, cruzar el tablero en móvil exigiría tocar 11+ veces.
 - **Fuentes consultadas sobre el original** (solo para verificar reglas y balance, sin copiar código de terceros):
   - `https://classicgaming.cc/classics/frogger/about` — layout de carretera y río, cinco casillas, vidas configurables (3/5/7), progresión por niveles.
   - `https://frogger.fandom.com/wiki/Frogger_(video_game)` (vía resultados de búsqueda; el fetch directo devolvió HTTP 402) — 30 segundos por rana, tortugas que se sumergen, endurecimiento del tráfico y aparición de cocodrilos/serpientes en niveles altos.
@@ -303,7 +304,6 @@ values (
 - Assets de imagen en `public/games/frogger/`.
 - Multiplayer y progresión persistente entre partidas.
 - Realtime, paginación del leaderboard y autenticación real.
-- Controles táctiles/móviles.
 - Tests automatizados.
 - Tema claro/oscuro propio del juego.
 - Cambios a `GameDetail.tsx` o a la ruta `/juego/[id]` más allá de la nueva entrada navegable.

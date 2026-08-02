@@ -55,6 +55,14 @@ Checklist fijo:
 - Padding lateral fijo que no se reduce en pantallas angostas.
 - Grillas de N columnas (`grid-template-columns` fijo) que no colapsan por debajo de cierto ancho.
 - Elementos que dependen solo de `:hover` sin fallback `@media (hover: none)`.
+- **Jugabilidad táctil (solo juegos):** verifica que la entrada del juego en `lib/games/registry.ts`
+  tenga `touchControls` y que ese config cubra **todas** las acciones necesarias para jugar, no solo
+  el movimiento. Se derivan leyendo el manejador de teclado del motor (`lib/games/<id>/engine.ts`, el
+  `switch` sobre `e.code`/`e.key`). Falta de `touchControls`, o un control jugable sin botón, es un
+  hallazgo **bloqueante**: se corrige en esta misma invocación (ver Fase 4).
+- **HUD en una sola fila (solo el reproductor):** suma el ancho real de `.hud-stats-row` (Puntuación +
+  cada `EngineState.stats` + botón PAUSA) a 360 px con la tipografía efectiva. Que envuelva a una
+  segunda fila es un hallazgo **bloqueante**.
 - Si el objetivo es un juego: que el presupuesto vertical HUD + canvas + `TouchControls` entre en
   640 px de alto, y que el canvas conserve su cuadrícula lógica (misma cantidad de columnas/filas/
   bloques que en escritorio, solo escalado por CSS).
@@ -76,6 +84,55 @@ ninguna. Reutiliza los breakpoints ya presentes en el archivo (520/600/720/820/8
 Para el reproductor, todo cuelga de `.av-player.touch-mode` y se dimensiona con `clamp()` sobre
 unidades de viewport, tal como fijan las specs 10 y 11; no toques `.crt-screen`, `.game-canvas`,
 `.game-canvas-fixed` ni `.next-piece-canvas` fuera de ese scope.
+
+### Controles táctiles obligatorios (solo juegos)
+
+Todo juego debe tener `touchControls` en su entrada de `lib/games/registry.ts`, **sin importar lo que
+diga o calle su spec**. Si el spec del juego omite los controles táctiles o los declara fuera de
+alcance, eso no aplica a este agente: los controles táctiles son responsabilidad exclusiva tuya y los
+agregas igual.
+
+- El config se deriva del motor: `dpadEnabled` con las direcciones que el motor realmente usa,
+  `dpadRepeat: true` solo si el movimiento sostenido tiene sentido en ese juego, y un `action` por
+  cada acción no direccional (disparar, rotar, caída dura…) con su `code`/`key` reales.
+- Patrón de referencia ya existente: `asteroides` y `tetris` (D-pad + acciones) contra `arkanoid`,
+  `snake` y `frogger` (`actions: []`). `components/TouchControls.tsx:9-16` documenta por qué hay que
+  enviar `key` además de `code` (algunos motores filtran el evento sintético por `e.key`, no solo por
+  `e.code`).
+- **Si el motor no escucha ninguna tecla para una acción necesaria**, edita
+  `lib/games/<id>/engine.ts` para agregar el listener de teclado faltante. Es la única excepción a la
+  regla de no tocar motores: te limitas a agregar el binding de entrada, jamás a cambiar constantes,
+  física, puntaje ni cuadrícula lógica. Declara el cambio en la entrega.
+- Los botones respetan el piso de 44 px de lado (ya cubierto por `.av-player.touch-mode .btn` y las
+  reglas de `TouchControls`).
+
+### HUD en una sola línea
+
+Objetivo: en modo táctil, a 360 px, `.hud-stats-row` + botón PAUSA ocupan **una sola fila, sin
+envolver**. Aplica esta escalera de recursos, en este orden estricto, deteniéndote apenas el HUD entra
+en una fila:
+
+1. **Quitar redundantes.** Si un dato ya lo dibuja el motor dentro del canvas (ej. un temporizador que
+   el motor ya renderiza en pantalla), conserva **el del canvas** y oculta el del HUD. La ocultación
+   es **solo CSS y solo en táctil**: `.av-player.touch-mode .hud-stat.<key> { display: none; }`,
+   aprovechando que `GamePlayer.tsx` ya emite `stat.key` como clase en cada `.hud-stat`. **No** toques
+   `initialState.stats` ni `onStateChange` en `lib/games/registry.ts`: en escritorio el stat se sigue
+   mostrando completo.
+2. **Compactar el indicador de vidas.** En táctil, un valor formado por el mismo glifo repetido (ej.
+   `"♥ ♥ ♥"`) se muestra como glifo + número (`"♥ 3"`). Impleméntalo en `components/GamePlayer.tsx` de
+   forma genérica —detectando el patrón de glifo repetido en `stat.value` cuando `isTouch` es
+   `true`—, nunca por `game.id` ni tocando el registry, para que valga para cualquier juego con vidas.
+   En escritorio el valor completo (`"♥ ♥ ♥"`) no cambia.
+3. **Reducir tamaño y espaciado** con `clamp()` dentro de `.av-player.touch-mode` (mismo patrón ya
+   presente en `app/globals.css` para `.hud-stat`/`.player-hud`/`.hud-actions`), hasta el piso
+   legible.
+4. **Abreviar las etiquetas** en modo táctil como último recurso (ej. "Puntuación" → "PTS", "Nivel" →
+   "NIV"), conservando el texto completo en escritorio (`.l` fuera de `touch-mode` no cambia). Esta
+   regla **anula, dentro de tu alcance, la decisión "No abreviar" del spec 11**: deja constancia
+   explícita de qué etiqueta abreviaste y a qué en la entrega y en la memoria.
+
+Si tras los 4 pasos el HUD sigue sin entrar en una fila a 360 px, es un hallazgo abierto documentado
+— nunca lo resuelves rompiendo el aislamiento del escritorio ni las demás reglas duras.
 
 Antes de levantar un servidor, revisa si ya hay uno en el puerto 3000 y reutilízalo.
 
@@ -107,6 +164,11 @@ Cierra tu respuesta con:
 
 - **Objetivo revisado** y su ruta/archivo principal.
 - **Hallazgos encontrados**, cada uno con `archivo:línea` y ancho, y cuáles se corrigieron.
+- **Controles táctiles** (solo juegos): el `touchControls` aplicado o validado, y si hizo falta
+  agregar un binding de teclado al motor (archivo y línea).
+- **HUD**: qué escalones de la escalera de compactación se usaron (stats ocultos en táctil, vidas
+  compactadas a glifo+número, tamaño/espaciado reducido, etiquetas abreviadas) y, si se abrevió
+  alguna etiqueta, cuál y a qué quedó.
 - **Hallazgos abiertos** y por qué no se corrigieron en esta invocación.
 - **Archivos modificados** (lista concreta de paths).
 - **Guion de comprobación manual** para el usuario: qué pantalla abrir, en qué ancho de ventana o
@@ -123,11 +185,17 @@ Cierra tu respuesta con:
 - El escritorio no cambia: si una regla nueva alcanza al DOM sin `touch-mode` ni una media query
   acotada, es un bug tuyo.
 - No cambias jugabilidad, constantes de motores, cuadrícula lógica de ningún juego ni los atributos
-  `width`/`height` de los `<canvas>`: el canvas se reduce solo por CSS.
+  `width`/`height` de los `<canvas>`: el canvas se reduce solo por CSS. Única excepción: agregar un
+  listener de teclado faltante en `engine.ts` para poder mapear un botón táctil obligatorio (ver
+  "Controles táctiles obligatorios" en Fase 4).
 - No agregas PWA, `manifest.json`, service worker, Capacitor, Cordova ni ningún wrapper nativo: el
   alcance es exclusivamente navegador móvil.
 - No introduces utilidades Tailwind ni ninguna librería de estilos nueva.
-- No abrevias ni quitas etiquetas de texto de HUD o stats para ganar espacio.
+- Ningún juego queda sin controles táctiles al cerrar una invocación sobre ese juego, aunque su spec
+  no los mencione o los declare fuera de alcance.
+- El HUD táctil no envuelve a una segunda fila a 360 px; para lograrlo puedes ocultar redundantes,
+  compactar vidas, reducir tamaño/espaciado y, como último recurso, abreviar etiquetas en modo
+  táctil (ver escalera en Fase 4) — el texto completo en escritorio nunca cambia.
 - No tocas Supabase, migraciones ni el MCP de Supabase.
 - No fuerzas ni sugieres orientación landscape.
 - `npm run build` limpio es obligatorio antes de terminar.

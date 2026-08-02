@@ -144,7 +144,10 @@ export default function GamePlayer({ game }: { game: Game }) {
   return (
     <div className={`av-player fade-in${isTouch ? " touch-mode" : ""}`}>
       <div className="player-hud">
-        <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
+        <div
+          className="hud-stats-row"
+          style={isTouch ? undefined : { display: "flex", gap: 24, flexWrap: "wrap" }}
+        >
           {!isTouch && (
             <div className="hud-stat">
               <div className="l">Jugador</div>

@@ -130,12 +130,18 @@ export const GAME_REGISTRY: Record<string, GameRegistryEntry> = {
   frogger: {
     width: 520,
     height: 560,
+    colorSchemes: CANONICAL_SKINS,
+    touchControls: {
+      dpadEnabled: ["up", "down", "left", "right"],
+      dpadRepeat: true,
+      actions: [],
+    },
     initialState: {
       score: 0,
       stats: [
         { key: "lives", label: "Vidas", value: "♥ ♥ ♥" },
         { key: "level", label: "Nivel", value: "01" },
-        { key: "time", label: "Tiempo", value: "30" },
+        { key: "time", label: "Tiempo", value: "40" },
         { key: "homes", label: "Casillas", value: "0/5" },
       ],
     },
