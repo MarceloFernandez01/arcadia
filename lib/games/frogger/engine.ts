@@ -167,18 +167,55 @@ export class FroggerEngine implements ArcadeGameEngine {
     this.level = 1;
     this.homes = 0;
     this.timeLeftMs = 0;
+    this.gameOver = false;
     this.lastNotified = null;
     this.notifyStateChange();
     this.draw();
   }
 
+  private respawnFrog() {
+    this.frog = {
+      col: START_COL,
+      row: SIDEWALK_ROW,
+      offsetX: 0,
+      hopFromMs: 0,
+      hopFromCol: START_COL,
+      hopFromRow: SIDEWALK_ROW,
+    };
+    this.queuedHop = null;
+  }
+
+  private killFrog() {
+    if (this.gameOver) return;
+    this.lives -= 1;
+    if (this.lives <= 0) {
+      this.lives = 0;
+      this.notifyStateChange();
+      this.endGame();
+      return;
+    }
+    this.respawnFrog();
+    this.notifyStateChange();
+  }
+
+  private endGame() {
+    if (this.gameOver) return;
+    this.gameOver = true;
+    this.pause();
+    this.options.onGameOver(this.score);
+  }
+
   private tryHop(dir: HopDirection, now: number) {
-    const targetCol = this.frog.col + dir.dCol;
+    // Recalibra la celda de origen desde la posición real en píxeles antes de saltar,
+    // para no arrastrar un desalineamiento acumulado por el offset de la plataforma.
+    const realCx = (this.frog.col + 0.5) * CELL_SIZE + this.frog.offsetX;
+    const originCol = Math.min(GRID_COLS - 1, Math.max(0, Math.round(realCx / CELL_SIZE - 0.5)));
+    const targetCol = originCol + dir.dCol;
     const targetRow = this.frog.row + dir.dRow;
     if (targetCol < 0 || targetCol >= GRID_COLS || targetRow < 0 || targetRow > SIDEWALK_ROW) {
       return;
     }
-    this.frog.hopFromCol = this.frog.col;
+    this.frog.hopFromCol = originCol;
     this.frog.hopFromRow = this.frog.row;
     this.frog.col = targetCol;
     this.frog.row = targetRow;
@@ -240,6 +277,49 @@ export class FroggerEngine implements ArcadeGameEngine {
           obj.x += ringLength;
         }
       }
+    }
+  }
+
+  private updateFrogSupport(dt: number) {
+    const lane = LANES[this.frog.row];
+    if (!lane) return;
+    if (lane.kind === "road") {
+      this.checkVehicleCollision(lane);
+    } else if (lane.kind === "log" || lane.kind === "turtle") {
+      this.checkRiverSupport(lane, dt);
+    }
+  }
+
+  private checkVehicleCollision(lane: LaneDef) {
+    const { cx } = this.frogDrawPosition();
+    const frogLeft = cx - 14;
+    const frogRight = cx + 14;
+    const margin = 4;
+    for (const obj of this.laneObjects[lane.row]) {
+      const vehicleLeft = obj.x + margin;
+      const vehicleRight = obj.x + obj.width - margin;
+      if (frogRight > vehicleLeft && frogLeft < vehicleRight) {
+        this.killFrog();
+        return;
+      }
+    }
+  }
+
+  private checkRiverSupport(lane: LaneDef, dt: number) {
+    if (this.frog.hopFromMs > 0) return;
+    const cx = (this.frog.col + 0.5) * CELL_SIZE + this.frog.offsetX;
+    const support = this.laneObjects[lane.row].find(
+      (obj) => !obj.submerged && cx >= obj.x && cx <= obj.x + obj.width,
+    );
+    if (!support) {
+      this.killFrog();
+      return;
+    }
+    const mult = LEVEL_SPEED_MULT(this.level);
+    this.frog.offsetX += lane.direction * lane.speed * mult * (dt / 1000);
+    const newCx = (this.frog.col + 0.5) * CELL_SIZE + this.frog.offsetX;
+    if (newCx < 0 || newCx > CANVAS_WIDTH) {
+      this.killFrog();
     }
   }
 
@@ -371,6 +451,7 @@ export class FroggerEngine implements ArcadeGameEngine {
 
     this.updateLanes(dt);
     this.updateFrogHop(ts);
+    this.updateFrogSupport(dt);
 
     this.draw();
     if (this.running) this.rafId = requestAnimationFrame(this.loop);
