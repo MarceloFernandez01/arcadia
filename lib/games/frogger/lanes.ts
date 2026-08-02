@@ -63,6 +63,9 @@ export const LANES: LaneDef[] = [
   },
 ];
 
-export const LEVEL_SPEED_MULT = (level: number): number => Math.min(1 + 0.15 * (level - 1), 2.2);
+// Arranca más lento en los primeros niveles (0.7x) y alcanza el mismo techo (2.2x)
+// en el nivel 9 que la curva original, para no romper el balance ya definido en niveles altos.
+export const LEVEL_SPEED_MULT = (level: number): number =>
+  Math.min(0.7 + 0.1875 * (level - 1), 2.2);
 
-export const LEVEL_TIME_MS = (level: number): number => Math.max(30 - (level - 1), 20) * 1000;
+export const LEVEL_TIME_MS = (level: number): number => Math.max(40 - (level - 1), 20) * 1000;

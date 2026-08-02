@@ -13,9 +13,10 @@ const CANVAS_WIDTH = GRID_COLS * CELL_SIZE;
 const CANVAS_HEIGHT = GRID_ROWS * CELL_SIZE;
 const START_COL = Math.floor(GRID_COLS / 2);
 const SIDEWALK_ROW = 12;
+const TIMER_ROW = 13;
 const TOTAL_LIVES = 3;
 const TOTAL_HOMES = 5;
-const HOME_SLOT_COLS = [1, 4, 6, 8, 11];
+const HOME_SLOT_COLS = [0, 3, 6, 9, 12];
 
 const PALETTE = {
   background: "#0a0a18",
@@ -25,9 +26,10 @@ const PALETTE = {
   riverGlow: "#0ea5c9",
   safe: "#12321f",
   hedge: "#0a2015",
+  homeOpen: "#1f8a4c",
+  homeOpenBorder: "#4ade80",
   frog: "#22c55e",
   frogEye: "#eab308",
-  frogHome: "#1f8a4c",
   log: "#6b4a35",
   logBorder: "#2e1c10",
   turtle: "#2f9e44",
@@ -49,9 +51,14 @@ const ROAD_COLORS: Record<number, string> = {
 
 const HOP_DURATION_MS = 100;
 
-const TURTLE_CYCLE_MS = 4000;
-const TURTLE_FLOAT_MS = 2400;
-const TURTLE_WARN_MS = 800;
+const TURTLE_CYCLE_BASE_MS = 4000;
+const TURTLE_CYCLE_MIN_MS = 2600;
+const TURTLE_WARN_RATIO = 0.2;
+// En los primeros niveles las tortugas pasan menos tiempo sumergidas (12% del ciclo
+// en vez de 20%); a partir del nivel 6 vuelve al 20% original.
+const TURTLE_SUBMERGED_RATIO_MIN = 0.08;
+const TURTLE_SUBMERGED_RATIO_MAX = 0.2;
+const TURTLE_SUBMERGED_RATIO_LEVEL_STEP = 0.024;
 
 interface HopDirection {
   dCol: number;
@@ -232,16 +239,18 @@ export class FroggerEngine implements ArcadeGameEngine {
     }
   }
 
-  private updateFrogHop(now: number) {
+  private settleHop(now: number) {
     if (this.frog.hopFromMs === 0) return;
     const elapsed = now - this.frog.hopFromMs;
     if (elapsed < HOP_DURATION_MS) return;
     this.frog.hopFromMs = 0;
-    if (this.queuedHop) {
-      const dir = this.queuedHop;
-      this.queuedHop = null;
-      this.tryHop(dir, now);
-    }
+  }
+
+  private consumeQueuedHop(now: number) {
+    if (this.frog.hopFromMs !== 0 || !this.queuedHop) return;
+    const dir = this.queuedHop;
+    this.queuedHop = null;
+    this.tryHop(dir, now);
   }
 
   private frogDrawPosition(): { cx: number; cy: number } {
@@ -266,7 +275,7 @@ export class FroggerEngine implements ArcadeGameEngine {
       x: i * period,
       width,
       ...(lane.kind === "turtle"
-        ? { phaseMs: (i * TURTLE_CYCLE_MS) / count, submerged: false }
+        ? { phaseMs: (i * TURTLE_CYCLE_BASE_MS) / count, submerged: false }
         : {}),
     }));
   }
@@ -277,8 +286,21 @@ export class FroggerEngine implements ArcadeGameEngine {
     return period * count;
   }
 
+  private turtleCycleMs(): number {
+    return Math.max(TURTLE_CYCLE_BASE_MS * Math.pow(0.95, this.level - 1), TURTLE_CYCLE_MIN_MS);
+  }
+
+  private turtleSubmergedRatio(): number {
+    return Math.min(
+      TURTLE_SUBMERGED_RATIO_MAX,
+      TURTLE_SUBMERGED_RATIO_MIN + TURTLE_SUBMERGED_RATIO_LEVEL_STEP * (this.level - 1),
+    );
+  }
+
   private updateLanes(dt: number) {
     const mult = LEVEL_SPEED_MULT(this.level);
+    const turtleCycle = this.turtleCycleMs();
+    const submergedStart = turtleCycle * (1 - this.turtleSubmergedRatio());
     for (const lane of LANES) {
       if (lane.kind !== "road" && lane.kind !== "log" && lane.kind !== "turtle") continue;
       const objects = this.laneObjects[lane.row];
@@ -292,8 +314,8 @@ export class FroggerEngine implements ArcadeGameEngine {
           obj.x += ringLength;
         }
         if (lane.kind === "turtle") {
-          obj.phaseMs = ((obj.phaseMs ?? 0) + dt) % TURTLE_CYCLE_MS;
-          obj.submerged = obj.phaseMs >= TURTLE_FLOAT_MS + TURTLE_WARN_MS;
+          obj.phaseMs = ((obj.phaseMs ?? 0) + dt) % turtleCycle;
+          obj.submerged = obj.phaseMs >= submergedStart;
         }
       }
     }
@@ -356,8 +378,13 @@ export class FroggerEngine implements ArcadeGameEngine {
   private checkRiverSupport(lane: LaneDef, dt: number) {
     if (this.frog.hopFromMs > 0) return;
     const cx = (this.frog.col + 0.5) * CELL_SIZE + this.frog.offsetX;
+    const frogLeft = cx - 14;
+    const frogRight = cx + 14;
+    // Solapamiento con la hitbox completa (no solo el centro): aterrizar cerca del
+    // borde de un tronco/tortuga sigue contando como soporte, igual que la fila de
+    // vehículos ya usa solapamiento en vez de un único punto.
     const support = this.laneObjects[lane.row].find(
-      (obj) => !obj.submerged && cx >= obj.x && cx <= obj.x + obj.width,
+      (obj) => !obj.submerged && frogRight > obj.x && frogLeft < obj.x + obj.width,
     );
     if (!support) {
       this.killFrog();
@@ -433,12 +460,38 @@ export class FroggerEngine implements ArcadeGameEngine {
       ctx.fillRect(col * CELL_SIZE, y, CELL_SIZE, CELL_SIZE);
     }
     HOME_SLOT_COLS.forEach((col, i) => {
-      if (!this.homesOccupied[i]) return;
-      const cx = (col + 0.5) * CELL_SIZE;
-      const cy = y + CELL_SIZE / 2;
-      ctx.fillStyle = PALETTE.frogHome;
-      ctx.fillRect(cx - 12, cy - 12, 24, 24);
+      const x = col * CELL_SIZE;
+      ctx.fillStyle = PALETTE.homeOpen;
+      ctx.fillRect(x + 3, y + 3, CELL_SIZE - 6, CELL_SIZE - 6);
+      ctx.strokeStyle = PALETTE.homeOpenBorder;
+      ctx.lineWidth = 2;
+      ctx.strokeRect(x + 3, y + 3, CELL_SIZE - 6, CELL_SIZE - 6);
+      if (this.homesOccupied[i]) {
+        const cx = x + CELL_SIZE / 2;
+        const cy = y + CELL_SIZE / 2;
+        ctx.fillStyle = PALETTE.frog;
+        ctx.fillRect(cx - 11, cy - 11, 22, 22);
+        ctx.fillStyle = PALETTE.frogEye;
+        ctx.fillRect(cx - 8, cy - 8, 4, 4);
+        ctx.fillRect(cx + 4, cy - 8, 4, 4);
+      }
     });
+  }
+
+  private drawTimerBar() {
+    const ctx = this.ctx;
+    const totalMs = LEVEL_TIME_MS(this.level);
+    const ratio = totalMs > 0 ? Math.max(0, Math.min(1, this.timeLeftMs / totalMs)) : 0;
+    const y = TIMER_ROW * CELL_SIZE;
+    const trackHeight = CELL_SIZE - 16;
+    const trackY = y + 8;
+    ctx.fillStyle = PALETTE.hedge;
+    ctx.fillRect(8, trackY, CANVAS_WIDTH - 16, trackHeight);
+    // La barra se acorta de derecha a izquierda: el extremo izquierdo queda fijo
+    // y el ancho visible se reduce a medida que se consume el tiempo restante.
+    const barWidth = (CANVAS_WIDTH - 16) * ratio;
+    ctx.fillStyle = ratio < 0.25 ? PALETTE.magenta : PALETTE.cyan;
+    ctx.fillRect(8, trackY, barWidth, trackHeight);
   }
 
   private drawFrog() {
@@ -474,9 +527,11 @@ export class FroggerEngine implements ArcadeGameEngine {
       } else if (lane.kind === "turtle") {
         const inset = 6;
         const turtleHeight = height - 8;
+        const cycle = this.turtleCycleMs();
+        const floatEnd = cycle * (1 - TURTLE_WARN_RATIO - this.turtleSubmergedRatio());
         for (const obj of objects) {
           const phase = obj.phaseMs ?? 0;
-          const warning = !obj.submerged && phase >= TURTLE_FLOAT_MS;
+          const warning = !obj.submerged && phase >= floatEnd;
           if (obj.submerged) {
             ctx.strokeStyle = PALETTE.turtleSubmerged;
             ctx.lineWidth = 1;
@@ -496,6 +551,7 @@ export class FroggerEngine implements ArcadeGameEngine {
   private draw() {
     this.drawBoard();
     this.drawLaneObjects();
+    this.drawTimerBar();
     this.drawFrog();
   }
 
@@ -511,9 +567,10 @@ export class FroggerEngine implements ArcadeGameEngine {
     this.lastTime = ts;
 
     this.updateLanes(dt);
-    this.updateFrogHop(ts);
+    this.settleHop(ts);
     this.updateFrogSupport(dt);
     this.updateTimer(dt);
+    this.consumeQueuedHop(ts);
     this.notifyStateChange();
 
     this.draw();

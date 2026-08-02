@@ -1,6 +1,6 @@
 # SPEC GJ-frogger-01 — Juego Frogger (base)
 
-> **Estado:** Aprobado
+> **Estado:** Implementado
 > **Depende de:** SPEC 05 (asteroids-game), SPEC 06 (leaderboard-supabase), SPEC 07 (tetris-game)
 > **Fecha:** 2026-07-29
 > **Objetivo:** Implementar el Frogger clásico de Konami como motor real en TypeScript/Canvas bajo el id `frogger`, con carretera de cinco carriles, río de cinco filas de troncos y tortugas, cinco casillas de llegada y temporizador por rana, dado de alta en `lib/games/registry.ts` y en Supabase para que aparezca en el Salón de la Fama.
@@ -16,7 +16,7 @@ Frogger ya estaba en el backlog del agente `game-planner` (`references/game-sugg
 **Encaje con los criterios de la plataforma:**
 
 1. **Score acumulable** — puntaje numérico único: 10 por fila nueva avanzada, 50 por rana en casa, bonus por tiempo restante, 1000 por nivel completo. Comparable entre partidas.
-2. **Un jugador, partidas cortas** — 3 ranas (vidas) y 30 segundos por intento; una partida promedio dura entre 2 y 4 minutos. Sin multijugador, sin progreso persistente.
+2. **Un jugador, partidas cortas** — 3 ranas (vidas) y 40 segundos por intento; una partida promedio dura entre 2 y 4 minutos. Sin multijugador, sin progreso persistente.
 3. **Motor viable en Canvas 2D + rAF** — filas con objetos que se desplazan a velocidad constante y colisión AABB; no hay física continua, ni 3D, ni pathfinding, ni audio obligatorio.
 4. **Compatible con `ArcadeGameEngine`** — `start/pause/resume/restart/destroy`, HUD vía `stats[{key,label,value}]`, `onGameOver(finalScore)`; el motor no dibuja overlays de "GAME OVER" ni de "PAUSA".
 5. **Control por teclado** — flechas y WASD, un salto discreto por pulsación.
@@ -32,7 +32,7 @@ Frogger ya estaba en el backlog del agente `game-planner` (`references/game-sugg
 - `lib/games/frogger/lanes.ts` con la definición declarativa de las filas (tipo, dirección, velocidad base, largo y espaciado de los objetos) y la curva de dificultad por nivel.
 - Tablero en grid de 13 columnas × 14 filas de 40 px → canvas de **520×560**, con el mismo layout del original: fila de casillas arriba, cinco filas de río, mediana segura, cinco carriles de carretera, acera de inicio y una franja inferior con la barra de tiempo dibujada dentro del canvas.
 - Cinco casillas de llegada (`home slots`) que se marcan como ocupadas al llegar una rana; completar las cinco sube de nivel.
-- Temporizador de 30 segundos por intento, con bonus de puntaje por tiempo restante al llegar a casa.
+- Temporizador de 40 segundos por intento, con bonus de puntaje por tiempo restante al llegar a casa.
 - Tres ranas (vidas). Muerte por atropello, por caer al agua, por ir sobre una tortuga sumergida, por ser arrastrada fuera del borde lateral sobre una plataforma, por saltar a una casilla ya ocupada o al seto entre casillas, y por agotar el tiempo.
 - Tortugas que se sumergen en ciclo, con fase de aviso visual antes de hundirse.
 - Curva de dificultad por nivel: velocidades escaladas y tiempo por intento reducido, con techo y piso explícitos.
@@ -91,7 +91,7 @@ Espaciado entre objetos de la misma fila: constante por fila, expresado en celda
 ### Colisiones y muerte
 
 - **Carretera:** solapamiento de la hitbox de la rana con la hitbox de un vehículo (ancho del objeto menos 4 px de margen a cada lado) → muerte.
-- **Río:** si la rana está en una fila de río y su centro no está sobre ninguna plataforma a flote → muerte por ahogo.
+- **Río:** si la hitbox de la rana (28×28 px) no se solapa con ninguna plataforma a flote de la fila → muerte por ahogo. Igual que en la carretera, se usa solapamiento de hitbox y no solo el punto central, para no matar al jugador cuando aterriza cerca del borde de un tronco visualmente ocupado.
 - **Tortuga sumergida:** las tortugas alternan un ciclo de 4 s: 2.4 s a flote, 0.8 s parpadeando (aún sostienen), 0.8 s sumergidas (no sostienen). Estar sobre una tortuga sumergida → muerte.
 - **Casillas:** saltar a una casilla libre = rana en casa. Saltar a una casilla ya ocupada o al seto entre casillas → muerte.
 - **Tiempo:** si el temporizador llega a 0 → muerte.
@@ -109,9 +109,9 @@ Espaciado entre objetos de la misma fila: constante por fila, expresado en celda
 ### Curva de dificultad
 
 - El nivel arranca en 1 y sube en 1 cada vez que se completan las cinco casillas. Al subir de nivel, las casillas se vacían, la rana vuelve a la acera y el temporizador se reinicia.
-- Multiplicador de velocidad por nivel: `min(1 + 0.15 × (nivel - 1), 2.2)` — techo alcanzado en el nivel 9 y mantenido después.
-- Tiempo por intento: `max(30 - (nivel - 1), 20)` segundos — un segundo menos por nivel, con piso de 20 s.
-- El ciclo de inmersión de las tortugas se acorta un 5 % por nivel, con piso de 2.6 s de ciclo total.
+- Multiplicador de velocidad por nivel: `min(0.7 + 0.1875 × (nivel - 1), 2.2)` — el nivel 1 arranca a 70 % de la velocidad base (más permisivo para el primer contacto con el juego) y alcanza el mismo techo de `2.2` en el nivel 9, mantenido después.
+- Tiempo por intento: `max(40 - (nivel - 1), 20)` segundos — un segundo menos por nivel, con piso de 20 s.
+- El ciclo de inmersión de las tortugas se acorta un 5 % por nivel, con piso de 2.6 s de ciclo total. Además, la proporción del ciclo que pasan sumergidas también depende del nivel: `min(0.2, 0.08 + 0.024 × (nivel - 1))` — 8 % del ciclo en el nivel 1, creciendo hasta el 20 % original a partir del nivel 6. El resto del ciclo se reparte entre la fase a flote y la fase de aviso (20 % fijo).
 - Las vidas **no** se reponen al subir de nivel.
 
 ### Controles
@@ -145,8 +145,8 @@ export interface LaneDef {
 }
 
 export const LANES: LaneDef[]; // 13 filas del tablero, orden fijo
-export const LEVEL_SPEED_MULT: (level: number) => number; // min(1 + 0.15*(level-1), 2.2)
-export const LEVEL_TIME_MS: (level: number) => number; // max(30 - (level-1), 20) * 1000
+export const LEVEL_SPEED_MULT: (level: number) => number; // min(0.7 + 0.1875*(level-1), 2.2)
+export const LEVEL_TIME_MS: (level: number) => number; // max(40 - (level-1), 20) * 1000
 ```
 
 ```ts
@@ -185,7 +185,7 @@ frogger: {
     stats: [
       { key: "lives", label: "Vidas", value: "♥ ♥ ♥" },
       { key: "level", label: "Nivel", value: "01" },
-      { key: "time", label: "Tiempo", value: "30" },
+      { key: "time", label: "Tiempo", value: "40" },
       { key: "homes", label: "Casillas", value: "0/5" },
     ],
   },
@@ -204,7 +204,7 @@ values (
   'frogger',
   'FROGGER',
   'Cruza la carretera y el río antes de que se agote el tiempo.',
-  'Guía a la rana por cinco carriles de tráfico y luego por un río de troncos y tortugas hasta ocupar las cinco casillas de llegada. Cada avance suma puntos, llegar a casa con tiempo de sobra suma bonus y completar las cinco casillas sube de nivel con todo más rápido. Tres ranas, 30 segundos por intento.',
+  'Guía a la rana por cinco carriles de tráfico y luego por un río de troncos y tortugas hasta ocupar las cinco casillas de llegada. Cada avance suma puntos, llegar a casa con tiempo de sobra suma bonus y completar las cinco casillas sube de nivel con todo más rápido. Tres ranas, 40 segundos por intento.',
   'ARCADE',
   'cover-rana',
   'green',
@@ -225,7 +225,7 @@ values (
 6. **Controles y salto.** Listener de teclado (flechas + WASD, con `preventDefault`) y salto discreto de una celda con interpolación de 100 ms y cola de un salto. Manual test: la rana salta en las cuatro direcciones y no puede salir del grid; todavía atraviesa todo sin morir.
 7. **Colisiones de carretera y río.** Implementar la colisión AABB con vehículos, el arrastre de la rana sobre troncos, la muerte por ahogo, la muerte por salir del borde lateral sobre una plataforma, el descuento de vidas y la reaparición en la acera. `onGameOver(finalScore)` al perder la tercera rana. Manual test: morir por atropello, por agua y por borde; ver bajar las vidas y abrirse el modal al perder la tercera.
 8. **Tortugas que se sumergen.** Agregar el ciclo de 4 s (a flote / aviso / sumergida) en las filas 2 y 5, con dibujo distinto por fase y muerte al estar sobre una sumergida. Manual test: quedarse sobre una tortuga hasta que se hunde y comprobar la muerte, y que la fase de aviso es visible antes.
-9. **Casillas, temporizador y puntaje.** Implementar las cinco casillas (llegada, ocupación, muerte por casilla ocupada o seto), el temporizador de 30 s con su barra y la muerte por tiempo, y la fórmula completa de puntaje (10 por fila nueva, 50 por casa, bonus de tiempo, 1000 por nivel). Manual test: verificar cada componente del puntaje con números concretos en el HUD.
+9. **Casillas, temporizador y puntaje.** Implementar las cinco casillas (llegada, ocupación, muerte por casilla ocupada o seto), el temporizador de 40 s con su barra y la muerte por tiempo, y la fórmula completa de puntaje (10 por fila nueva, 50 por casa, bonus de tiempo, 1000 por nivel). Manual test: verificar cada componente del puntaje con números concretos en el HUD.
 10. **Curva de dificultad.** Aplicar `LEVEL_SPEED_MULT`, `LEVEL_TIME_MS` y el acortamiento del ciclo de tortugas al subir de nivel, con el vaciado de casillas y el reinicio de posición. Manual test: completar un nivel y notar el aumento de velocidad y el segundo menos de tiempo.
 11. **Repaso final.** `npm run build` sin errores de tipos. Probar el flujo completo en el navegador: `/biblioteca` → detalle de "frogger" → `/jugar/frogger` → cruzar carretera y río, llenar las cinco casillas, subir de nivel, pausar/reanudar sin saltos ni movimiento perdido, perder las tres ranas → modal automático con el puntaje real, "GUARDAR PUNTUACIÓN" inserta en `scores`, "JUGAR DE NUEVO" reinicia el motor, "SALIR" no deja el loop ni listeners activos. Confirmar que Asteroids, Tetris, Arkanoid y Snake siguen funcionando igual.
 
@@ -245,8 +245,8 @@ values (
 - [ ] Sobre un tronco o una tortuga a flote, la rana se desplaza con la plataforma; si es arrastrada fuera del borde lateral, pierde una vida.
 - [ ] Las tortugas de las filas 2 y 5 se sumergen en ciclo con una fase de aviso visible, y estar sobre una sumergida quita una vida.
 - [ ] Saltar a una casilla ya ocupada o al seto entre casillas quita una vida.
-- [ ] Agotar el temporizador de 30 s (menos en niveles altos, con piso de 20 s) quita una vida.
-- [ ] Al subir de nivel, todas las velocidades se multiplican por `min(1 + 0.15 × (nivel - 1), 2.2)` y el tiempo baja un segundo por nivel con piso de 20 s.
+- [ ] Agotar el temporizador de 40 s (menos en niveles altos, con piso de 20 s) quita una vida.
+- [ ] Al subir de nivel, todas las velocidades se multiplican por `min(0.7 + 0.1875 × (nivel - 1), 2.2)` y el tiempo baja un segundo por nivel con piso de 20 s.
 - [ ] El movimiento de vehículos y plataformas se basa en delta time real, de modo que la velocidad percibida es la misma en un monitor de 60 Hz y en uno de 144 Hz.
 - [ ] Perder la tercera rana invoca `onGameOver` una sola vez y abre automáticamente el modal de fin de partida con el puntaje real, sin overlay interno de "GAME OVER" en el canvas.
 - [ ] PAUSA/REANUDAR detiene y reactiva el loop sin saltos de posición, sin consumir tiempo del temporizador durante la pausa y sin overlay interno de "PAUSA".
@@ -265,7 +265,8 @@ values (
 - **No:** mosca bonus de 200 puntos y rana hembra de 200 puntos. Ambas son extras del original que agregan spawns y estados sin cambiar el bucle; se descartan para mantener el motor mínimo en la versión base. Candidatos a spec futuro.
 - **No:** cocodrilos en el río, serpientes en la mediana, nutrias y cocodrilo asomando en una casilla. Son enemigos con comportamiento propio que aparecen en niveles altos del original; suben el costo del motor y el riesgo de balance sin aportar al bucle base.
 - **Sí:** 3 vidas fijas. El arcade original permitía 3, 5 o 7 según la configuración del operador; se fija en 3 para alinearse con Asteroids y Arkanoid, que ya usan `♥ ♥ ♥`.
-- **Sí:** 30 segundos por intento, canónico, con reducción de 1 s por nivel y piso de 20 s. El original endurece cada nivel sin documentar la fórmula exacta; se elige una progresión propia, explícita y verificable en vez de dejarla abierta.
+- **Sí:** 40 segundos por intento, con reducción de 1 s por nivel y piso de 20 s. El valor canónico original (30 s) resultó demasiado exigente en el playtesting durante la implementación; se sube a 40 s para dar más margen en el primer contacto con el juego, manteniendo la misma progresión (−1 s por nivel, piso de 20 s).
+- **Sí:** curva de velocidad y de sumersión de tortugas más permisivas en los primeros niveles (`LEVEL_SPEED_MULT` arranca en 0.7× en vez de 1× y la proporción de tiempo sumergido de las tortugas empieza en 8 % en vez de 20 %, ambas convergiendo a los valores originales hacia el nivel 6–9). Ajuste de balance hecho durante el playtesting: la versión inicial resultaba frustrante para quien recién prueba el juego. El techo de velocidad (`2.2×` en el nivel 9) y el piso del ciclo de tortugas (2.6 s) se mantienen sin cambios respecto a la decisión original.
 - **Sí:** todo dibujado por código, sin spritesheets. No hay assets locales de Frogger (`references/started-games/` solo tiene `02-asteroids`, `03-tetris` y `04-arkanoid`; `references/assest-source/` no tiene nada de Frogger), y pedir arte nuevo agregaría un riesgo evitable. Formas geométricas con la paleta neón bastan para distinguir rana, troncos, tortugas y vehículos.
 - **Sí:** reutilizar `.cover-rana`, que ya existe en `app/globals.css` (línea ~791, rana verde sobre franjas cyan) y no está en uso por ningún juego. Evita CSS nuevo y ya representa exactamente este juego, así que no hace falta invocar `/frontend-design`.
 - **Sí:** `cat: 'ARCADE'` y `color: 'green'`. Las cuatro categorías y los cuatro colores permitidos por el `check` de `001_games_and_scores.sql` ya están usados, así que ninguna combinación "diversifica" de verdad; se elige la categoría honesta (ARCADE) y el color que representa a la rana. `green` no colisiona con el color elegido en el spec `02` (`cyan`).
@@ -279,19 +280,19 @@ values (
 
 ## Riesgos identificados
 
-| Riesgo                                                                                                                                                                                       | Mitigación                                                                                                                                                                                            |
-| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Fuga del `requestAnimationFrame` y de los listeners de teclado si `FroggerEngine.destroy()` no los limpia al desmontar o navegar fuera de `/jugar/frogger`.                                  | Cubierto en el paso 11 del plan y en los criterios de aceptación; `destroy()` cancela el rAF y remueve el listener registrado en `start()`.                                                           |
-| `dt` gigante al reanudar de una pausa larga, si `pause()` no detiene el reloj interno y `resume()` no lo resetea: los vehículos "teleportarían" y el temporizador saltaría.                  | Al pausar se detiene el bucle por completo y el temporizador; al reanudar se resetea `lastTime` como si fuera el primer frame — mismo patrón ya validado en los cuatro motores existentes.            |
-| Estado global de módulo que sobrevive al HMR de Next.js si el motor no encapsula todo en la instancia.                                                                                       | `lanes.ts` es un módulo puro de constantes; todo el estado mutable (`frog`, objetos de cada fila, score, vidas, nivel, tiempo) vive en propiedades de `FroggerEngine`.                                |
-| Overlay de "GAME OVER"/"PAUSA" duplicado entre el canvas y React.                                                                                                                            | El motor nunca dibuja esos textos; solo invoca `onGameOver(finalScore)` y React muestra el modal y el overlay de pausa.                                                                               |
-| **Colisión injusta en la carretera.** Con hitbox de celda completa la rana muere al rozar un vehículo que visualmente todavía no la toca, y el juego se siente tramposo.                     | Hitbox de la rana reducida a 28×28 px y hitbox del vehículo recortada 4 px por lado; el criterio de aceptación de duración de partida (2–4 min) sirve de prueba de que el balance no es frustrante.   |
-| **Rana sobre el límite entre dos plataformas.** Al pasar de un tronco a otro, un cálculo por celda en vez de por píxel podría matarla estando visualmente a salvo.                           | La comprobación de soporte usa el centro horizontal de la rana en píxeles contra el rango de cada objeto de la fila, no la celda lógica.                                                              |
-| **Arrastre acumulado por la plataforma.** Si el offset en píxeles no se reconcilia con la celda lógica al saltar, la rana podría quedar desalineada del grid y romper la lógica de casillas. | Al iniciar un salto, la celda de origen se recalcula desde la posición real en píxeles (redondeo a la columna más cercana) y el offset se reinicia a 0.                                               |
-| **Balance del ciclo de inmersión de las tortugas.** Un ciclo demasiado corto vuelve las filas de tortugas casi impasables y dispara muertes que el jugador no puede prever.                  | Ciclo de 4 s con 2.4 s a flote y una fase de aviso de 0.8 s antes de hundirse; el acortamiento por nivel tiene piso de 2.6 s. Valores fijados en el spec, ajustables solo con criterio de aceptación. |
-| **Reciclado de objetos con hueco irregular.** Reposicionar un objeto al salir del borde sin conservar el espaciado dejaría patrones imposibles de cruzar en filas rápidas.                   | Cada fila se genera como un anillo de objetos con espaciado constante y se recicla sumando el largo total del anillo, no reposicionando al azar.                                                      |
-| **Velocidades escaladas sin techo.** Un multiplicador lineal sin límite volvería el juego injugable en niveles altos y podría hacer que un vehículo cruce más de una celda entre frames.     | El multiplicador tiene techo `2.2`; con ese techo el objeto más rápido (fila 7, 286 px/s) recorre menos de 5 px por frame a 60 Hz, muy por debajo del ancho de una hitbox.                            |
-| **Canvas de 520×560 en pantallas angostas.** Puede quedar ajustado dentro de `.crt-screen` en viewports pequeños.                                                                            | No se resuelve en este spec (layout móvil está fuera de alcance); se documenta como limitación conocida, igual que en SPEC 07 con el canvas secundario de Tetris.                                     |
+| Riesgo                                                                                                                                                                                                                                                 | Mitigación                                                                                                                                                                                                                                |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Fuga del `requestAnimationFrame` y de los listeners de teclado si `FroggerEngine.destroy()` no los limpia al desmontar o navegar fuera de `/jugar/frogger`.                                                                                            | Cubierto en el paso 11 del plan y en los criterios de aceptación; `destroy()` cancela el rAF y remueve el listener registrado en `start()`.                                                                                               |
+| `dt` gigante al reanudar de una pausa larga, si `pause()` no detiene el reloj interno y `resume()` no lo resetea: los vehículos "teleportarían" y el temporizador saltaría.                                                                            | Al pausar se detiene el bucle por completo y el temporizador; al reanudar se resetea `lastTime` como si fuera el primer frame — mismo patrón ya validado en los cuatro motores existentes.                                                |
+| Estado global de módulo que sobrevive al HMR de Next.js si el motor no encapsula todo en la instancia.                                                                                                                                                 | `lanes.ts` es un módulo puro de constantes; todo el estado mutable (`frog`, objetos de cada fila, score, vidas, nivel, tiempo) vive en propiedades de `FroggerEngine`.                                                                    |
+| Overlay de "GAME OVER"/"PAUSA" duplicado entre el canvas y React.                                                                                                                                                                                      | El motor nunca dibuja esos textos; solo invoca `onGameOver(finalScore)` y React muestra el modal y el overlay de pausa.                                                                                                                   |
+| **Colisión injusta en la carretera.** Con hitbox de celda completa la rana muere al rozar un vehículo que visualmente todavía no la toca, y el juego se siente tramposo.                                                                               | Hitbox de la rana reducida a 28×28 px y hitbox del vehículo recortada 4 px por lado; el criterio de aceptación de duración de partida (2–4 min) sirve de prueba de que el balance no es frustrante.                                       |
+| **Rana sobre el límite entre dos plataformas o cerca del borde de un tronco.** Un cálculo por celda en vez de por píxel, o un chequeo de un único punto central, podría matarla estando visualmente a salvo.                                           | La comprobación de soporte usa solapamiento de la hitbox completa de la rana (28×28 px) contra el rango de cada objeto de la fila en píxeles, no la celda lógica ni un único punto central — mismo criterio que la colisión de vehículos. |
+| **Arrastre acumulado por la plataforma.** Si el offset en píxeles no se reconcilia con la celda lógica al saltar, la rana podría quedar desalineada del grid y romper la lógica de casillas.                                                           | Al iniciar un salto, la celda de origen se recalcula desde la posición real en píxeles (redondeo a la columna más cercana) y el offset se reinicia a 0.                                                                                   |
+| **Balance del ciclo de inmersión de las tortugas.** Un ciclo demasiado corto, o una proporción sumergida demasiado alta, vuelve las filas de tortugas casi impasables y dispara muertes que el jugador no puede prever, sobre todo al empezar a jugar. | Ciclo de 4 s con fase de aviso fija del 20 %; la proporción sumergida escala con el nivel (8 % en el nivel 1 hasta 20 % desde el nivel 6), y el acortamiento del ciclo total por nivel tiene piso de 2.6 s.                               |
+| **Reciclado de objetos con hueco irregular.** Reposicionar un objeto al salir del borde sin conservar el espaciado dejaría patrones imposibles de cruzar en filas rápidas.                                                                             | Cada fila se genera como un anillo de objetos con espaciado constante y se recicla sumando el largo total del anillo, no reposicionando al azar.                                                                                          |
+| **Velocidades escaladas sin techo.** Un multiplicador lineal sin límite volvería el juego injugable en niveles altos y podría hacer que un vehículo cruce más de una celda entre frames.                                                               | El multiplicador tiene techo `2.2`; con ese techo el objeto más rápido (fila 7, 286 px/s) recorre menos de 5 px por frame a 60 Hz, muy por debajo del ancho de una hitbox.                                                                |
+| **Canvas de 520×560 en pantallas angostas.** Puede quedar ajustado dentro de `.crt-screen` en viewports pequeños.                                                                                                                                      | No se resuelve en este spec (layout móvil está fuera de alcance); se documenta como limitación conocida, igual que en SPEC 07 con el canvas secundario de Tetris.                                                                         |
 
 ## Lo que no está en este spec
 
