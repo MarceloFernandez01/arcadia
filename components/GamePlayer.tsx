@@ -144,7 +144,10 @@ export default function GamePlayer({ game }: { game: Game }) {
   return (
     <div className={`av-player fade-in${isTouch ? " touch-mode" : ""}`}>
       <div className="player-hud">
-        <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
+        <div
+          className="hud-stats-row"
+          style={isTouch ? undefined : { display: "flex", gap: 24, flexWrap: "wrap" }}
+        >
           {!isTouch && (
             <div className="hud-stat">
               <div className="l">Jugador</div>
@@ -207,7 +210,13 @@ export default function GamePlayer({ game }: { game: Game }) {
             ref={canvasRef}
             width={registryEntry.width}
             height={registryEntry.height}
-            className={`${registryEntry.secondaryCanvas ? "game-canvas-fixed" : "game-canvas"}${isTouch ? " touch-scaled-canvas" : ""}${isTouch && registryEntry.width === registryEntry.height ? " touch-square-canvas" : ""}`}
+            className={`${registryEntry.secondaryCanvas ? "game-canvas-fixed" : "game-canvas"}${isTouch ? " touch-scaled-canvas" : ""}${isTouch && registryEntry.width === registryEntry.height ? " touch-square-canvas" : ""}${
+              isTouch &&
+              !registryEntry.secondaryCanvas &&
+              registryEntry.height > registryEntry.width
+                ? " touch-portrait-canvas"
+                : ""
+            }`}
             style={
               isTouch
                 ? {

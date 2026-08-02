@@ -35,6 +35,7 @@ Flujo de Spec Driven Design (skills globales en `~/.claude/skills/`):
 - `/spec` — genera specs sección por sección con confirmación del usuario, sin escribir código.
 - `/spec-impl` — implementa un spec ya aprobado.
 - `/add-game` (skill de proyecto en `.claude/skills/add-game/SKILL.md`) — genera el spec de un juego nuevo con leaderboard (`specs/NN-<slug>.md`) siguiendo el patrón de los specs 05–09; no escribe código, no toca Supabase ni ejecuta migraciones.
+- `/spec-impl-game` (skill de proyecto en `.claude/skills/spec-impl-game/SKILL.md`) — variante de `/spec-impl` para specs que agregan un juego nuevo: sigue el mismo lineamiento (valida estado "Aprobado", crea rama, implementa paso a paso) y, al terminar y con `npm run build` limpio, encadena en serie (nunca en paralelo) los agentes `skin-designer` y luego `mobile-porter` sobre el juego recién implementado.
 
 ## Agentes
 
@@ -59,6 +60,20 @@ Flujo de Spec Driven Design (skills globales en `~/.claude/skills/`):
   código: crea `lib/games/skins.ts` y `lib/games/<id>/skins.ts`, refactoriza el `engine.ts` del juego
   indicado y verifica el resultado con capturas de Playwright. Mantiene memoria en
   `references/game-with-theme.md`.
+- `mobile-porter` (`.claude/agents/mobile-porter.md`) — revisa y corrige la adaptación a navegador
+  móvil de un juego o un elemento/página concreto (ej. "menú principal", "salón", un juego puntual),
+  uno por invocación. Si no se le indica un objetivo, reporta pendientes desde
+  `references/mobile-review-log.md` y se detiene. Toma como fuente de convenciones ya acordadas los
+  specs `10-controles-tactiles-moviles.md` y `11-refinamiento-hud-movil.md`. Sí escribe código
+  (CSS/TSX), pero audita de forma **estática** (lectura de código y CSS contra los anchos 360/375/414px,
+  sin Playwright ni navegador); la comprobación visual final queda a cargo del usuario en un
+  dispositivo real. Su alcance es exclusivamente navegador móvil (no agrega PWA, manifest, service
+  worker ni ningún wrapper nativo tipo Capacitor). En un juego, siempre garantiza controles táctiles
+  jugables (agrega `touchControls` al registry aunque el spec del juego los omita o los declare fuera
+  de alcance, y puede sumar un binding de teclado faltante al motor solo para habilitar un botón) y que
+  el HUD del reproductor quede en una sola línea a 360px (con una escalera de recursos que llega hasta
+  abreviar etiquetas en modo táctil como último recurso, solo en táctil). Mantiene memoria en
+  `references/mobile-review-log.md`.
 
 ## Dev server
 

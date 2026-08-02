@@ -1,5 +1,6 @@
 import { ArkanoidEngine } from "@/lib/games/arkanoid/engine";
 import { AsteroidsEngine } from "@/lib/games/asteroids/engine";
+import { FroggerEngine } from "@/lib/games/frogger/engine";
 import { SnakeEngine } from "@/lib/games/snake/engine";
 import { CANONICAL_SKINS } from "@/lib/games/skins";
 import { TetrisEngine } from "@/lib/games/tetris/engine";
@@ -124,6 +125,28 @@ export const GAME_REGISTRY: Record<string, GameRegistryEntry> = {
     },
     create(canvas, options) {
       return new SnakeEngine(canvas, options);
+    },
+  },
+  frogger: {
+    width: 520,
+    height: 560,
+    colorSchemes: CANONICAL_SKINS,
+    touchControls: {
+      dpadEnabled: ["up", "down", "left", "right"],
+      dpadRepeat: true,
+      actions: [],
+    },
+    initialState: {
+      score: 0,
+      stats: [
+        { key: "lives", label: "Vidas", value: "♥ ♥ ♥" },
+        { key: "level", label: "Nivel", value: "01" },
+        { key: "time", label: "Tiempo", value: "40" },
+        { key: "homes", label: "Casillas", value: "0/5" },
+      ],
+    },
+    create(canvas, options) {
+      return new FroggerEngine(canvas, options);
     },
   },
 };
