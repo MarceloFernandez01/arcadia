@@ -43,6 +43,24 @@ const ROAD_COLORS: Record<number, string> = {
   11: PALETTE.yellow,
 };
 
+const HOP_DURATION_MS = 100;
+
+interface HopDirection {
+  dCol: number;
+  dRow: number;
+}
+
+const KEY_DIRECTIONS: Record<string, HopDirection> = {
+  ArrowUp: { dCol: 0, dRow: -1 },
+  ArrowDown: { dCol: 0, dRow: 1 },
+  ArrowLeft: { dCol: -1, dRow: 0 },
+  ArrowRight: { dCol: 1, dRow: 0 },
+  KeyW: { dCol: 0, dRow: -1 },
+  KeyS: { dCol: 0, dRow: 1 },
+  KeyA: { dCol: -1, dRow: 0 },
+  KeyD: { dCol: 1, dRow: 0 },
+};
+
 interface LaneObject {
   x: number;
   width: number;
@@ -55,6 +73,8 @@ interface Frog {
   row: number;
   offsetX: number;
   hopFromMs: number;
+  hopFromCol: number;
+  hopFromRow: number;
 }
 
 export class FroggerEngine implements ArcadeGameEngine {
@@ -63,22 +83,38 @@ export class FroggerEngine implements ArcadeGameEngine {
 
   private frog!: Frog;
   private laneObjects!: LaneObject[][];
+  private queuedHop: HopDirection | null = null;
   private score = 0;
   private lives = TOTAL_LIVES;
   private level = 1;
   private homes = 0;
   private timeLeftMs = 0;
+  private gameOver = false;
   private lastNotified: EngineState | null = null;
 
   private lastTime: number | null = null;
   private rafId: number | null = null;
   private running = false;
 
+  private onKeyDown = (e: KeyboardEvent) => {
+    if (!this.running) return;
+    const dir = KEY_DIRECTIONS[e.code];
+    if (!dir) return;
+    e.preventDefault();
+    if (this.frog.hopFromMs > 0) {
+      this.queuedHop = dir;
+    } else {
+      this.tryHop(dir, performance.now());
+    }
+  };
+
   constructor(canvas: HTMLCanvasElement, options: ArcadeGameEngineOptions) {
     const ctx = canvas.getContext("2d");
     if (!ctx) throw new Error("No se pudo obtener el contexto 2D del canvas");
     this.ctx = ctx;
     this.options = options;
+
+    window.addEventListener("keydown", this.onKeyDown);
 
     this.initGame();
   }
@@ -112,10 +148,19 @@ export class FroggerEngine implements ArcadeGameEngine {
 
   destroy() {
     this.pause();
+    window.removeEventListener("keydown", this.onKeyDown);
   }
 
   private initGame() {
-    this.frog = { col: START_COL, row: SIDEWALK_ROW, offsetX: 0, hopFromMs: 0 };
+    this.frog = {
+      col: START_COL,
+      row: SIDEWALK_ROW,
+      offsetX: 0,
+      hopFromMs: 0,
+      hopFromCol: START_COL,
+      hopFromRow: SIDEWALK_ROW,
+    };
+    this.queuedHop = null;
     this.laneObjects = LANES.map((lane) => this.initLaneObjects(lane));
     this.score = 0;
     this.lives = TOTAL_LIVES;
@@ -125,6 +170,45 @@ export class FroggerEngine implements ArcadeGameEngine {
     this.lastNotified = null;
     this.notifyStateChange();
     this.draw();
+  }
+
+  private tryHop(dir: HopDirection, now: number) {
+    const targetCol = this.frog.col + dir.dCol;
+    const targetRow = this.frog.row + dir.dRow;
+    if (targetCol < 0 || targetCol >= GRID_COLS || targetRow < 0 || targetRow > SIDEWALK_ROW) {
+      return;
+    }
+    this.frog.hopFromCol = this.frog.col;
+    this.frog.hopFromRow = this.frog.row;
+    this.frog.col = targetCol;
+    this.frog.row = targetRow;
+    this.frog.offsetX = 0;
+    this.frog.hopFromMs = now;
+  }
+
+  private updateFrogHop(now: number) {
+    if (this.frog.hopFromMs === 0) return;
+    const elapsed = now - this.frog.hopFromMs;
+    if (elapsed < HOP_DURATION_MS) return;
+    this.frog.hopFromMs = 0;
+    if (this.queuedHop) {
+      const dir = this.queuedHop;
+      this.queuedHop = null;
+      this.tryHop(dir, now);
+    }
+  }
+
+  private frogDrawPosition(): { cx: number; cy: number } {
+    const baseX = (this.frog.col + 0.5) * CELL_SIZE;
+    const baseY = (this.frog.row + 0.5) * CELL_SIZE;
+    if (this.frog.hopFromMs === 0) {
+      return { cx: baseX + this.frog.offsetX, cy: baseY };
+    }
+    const now = this.lastTime ?? performance.now();
+    const progress = Math.min(1, (now - this.frog.hopFromMs) / HOP_DURATION_MS);
+    const fromX = (this.frog.hopFromCol + 0.5) * CELL_SIZE;
+    const fromY = (this.frog.hopFromRow + 0.5) * CELL_SIZE;
+    return { cx: fromX + (baseX - fromX) * progress, cy: fromY + (baseY - fromY) * progress };
   }
 
   private initLaneObjects(lane: LaneDef): LaneObject[] {
@@ -225,8 +309,7 @@ export class FroggerEngine implements ArcadeGameEngine {
 
   private drawFrog() {
     const ctx = this.ctx;
-    const cx = (this.frog.col + 0.5) * CELL_SIZE + this.frog.offsetX;
-    const cy = (this.frog.row + 0.5) * CELL_SIZE;
+    const { cx, cy } = this.frogDrawPosition();
     ctx.fillStyle = PALETTE.frog;
     ctx.fillRect(cx - 14, cy - 14, 28, 28);
     ctx.fillStyle = PALETTE.frogEye;
@@ -287,6 +370,7 @@ export class FroggerEngine implements ArcadeGameEngine {
     this.lastTime = ts;
 
     this.updateLanes(dt);
+    this.updateFrogHop(ts);
 
     this.draw();
     if (this.running) this.rafId = requestAnimationFrame(this.loop);
