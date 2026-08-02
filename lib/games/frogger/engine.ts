@@ -4,6 +4,7 @@ import {
   GRID_ROWS,
   LANES,
   LEVEL_SPEED_MULT,
+  LEVEL_TIME_MS,
   type LaneDef,
 } from "@/lib/games/frogger/lanes";
 import type { ArcadeGameEngine, ArcadeGameEngineOptions, EngineState } from "@/lib/games/types";
@@ -14,6 +15,7 @@ const START_COL = Math.floor(GRID_COLS / 2);
 const SIDEWALK_ROW = 12;
 const TOTAL_LIVES = 3;
 const TOTAL_HOMES = 5;
+const HOME_SLOT_COLS = [1, 4, 6, 8, 11];
 
 const PALETTE = {
   background: "#0a0a18",
@@ -90,6 +92,8 @@ export class FroggerEngine implements ArcadeGameEngine {
   private frog!: Frog;
   private laneObjects!: LaneObject[][];
   private queuedHop: HopDirection | null = null;
+  private homesOccupied!: boolean[];
+  private minRowReached = SIDEWALK_ROW;
   private score = 0;
   private lives = TOTAL_LIVES;
   private level = 1;
@@ -158,23 +162,15 @@ export class FroggerEngine implements ArcadeGameEngine {
   }
 
   private initGame() {
-    this.frog = {
-      col: START_COL,
-      row: SIDEWALK_ROW,
-      offsetX: 0,
-      hopFromMs: 0,
-      hopFromCol: START_COL,
-      hopFromRow: SIDEWALK_ROW,
-    };
-    this.queuedHop = null;
     this.laneObjects = LANES.map((lane) => this.initLaneObjects(lane));
+    this.homesOccupied = Array(TOTAL_HOMES).fill(false);
     this.score = 0;
     this.lives = TOTAL_LIVES;
     this.level = 1;
     this.homes = 0;
-    this.timeLeftMs = 0;
     this.gameOver = false;
     this.lastNotified = null;
+    this.respawnFrog();
     this.notifyStateChange();
     this.draw();
   }
@@ -189,6 +185,8 @@ export class FroggerEngine implements ArcadeGameEngine {
       hopFromRow: SIDEWALK_ROW,
     };
     this.queuedHop = null;
+    this.minRowReached = SIDEWALK_ROW;
+    this.timeLeftMs = LEVEL_TIME_MS(this.level);
   }
 
   private killFrog() {
@@ -227,6 +225,11 @@ export class FroggerEngine implements ArcadeGameEngine {
     this.frog.row = targetRow;
     this.frog.offsetX = 0;
     this.frog.hopFromMs = now;
+
+    if (targetRow < this.minRowReached) {
+      this.minRowReached = targetRow;
+      this.score += 10;
+    }
   }
 
   private updateFrogHop(now: number) {
@@ -303,6 +306,35 @@ export class FroggerEngine implements ArcadeGameEngine {
       this.checkVehicleCollision(lane);
     } else if (lane.kind === "log" || lane.kind === "turtle") {
       this.checkRiverSupport(lane, dt);
+    } else if (lane.kind === "home") {
+      this.checkHomeArrival();
+    }
+  }
+
+  private checkHomeArrival() {
+    if (this.frog.hopFromMs > 0) return;
+    const slotIndex = HOME_SLOT_COLS.indexOf(this.frog.col);
+    if (slotIndex === -1 || this.homesOccupied[slotIndex]) {
+      this.killFrog();
+      return;
+    }
+    this.homesOccupied[slotIndex] = true;
+    this.homes += 1;
+    this.score += 50 + 10 * Math.floor(this.timeLeftMs / 500);
+    if (this.homes >= TOTAL_HOMES) {
+      this.score += 1000;
+      this.level += 1;
+      this.homesOccupied = Array(TOTAL_HOMES).fill(false);
+      this.homes = 0;
+    }
+    this.respawnFrog();
+  }
+
+  private updateTimer(dt: number) {
+    if (this.timeLeftMs <= 0) return;
+    this.timeLeftMs = Math.max(0, this.timeLeftMs - dt);
+    if (this.timeLeftMs === 0) {
+      this.killFrog();
     }
   }
 
@@ -395,12 +427,18 @@ export class FroggerEngine implements ArcadeGameEngine {
   private drawHomeSlots() {
     const ctx = this.ctx;
     const y = 0;
-    for (let i = 0; i < TOTAL_HOMES; i++) {
-      const slotCol = 1 + i * 2.5;
-      const x = slotCol * CELL_SIZE;
+    for (let col = 0; col < GRID_COLS; col++) {
+      if (HOME_SLOT_COLS.includes(col)) continue;
       ctx.fillStyle = PALETTE.hedge;
-      ctx.fillRect(x - CELL_SIZE / 2, y, CELL_SIZE, CELL_SIZE);
+      ctx.fillRect(col * CELL_SIZE, y, CELL_SIZE, CELL_SIZE);
     }
+    HOME_SLOT_COLS.forEach((col, i) => {
+      if (!this.homesOccupied[i]) return;
+      const cx = (col + 0.5) * CELL_SIZE;
+      const cy = y + CELL_SIZE / 2;
+      ctx.fillStyle = PALETTE.frogHome;
+      ctx.fillRect(cx - 12, cy - 12, 24, 24);
+    });
   }
 
   private drawFrog() {
@@ -475,6 +513,8 @@ export class FroggerEngine implements ArcadeGameEngine {
     this.updateLanes(dt);
     this.updateFrogHop(ts);
     this.updateFrogSupport(dt);
+    this.updateTimer(dt);
+    this.notifyStateChange();
 
     this.draw();
     if (this.running) this.rafId = requestAnimationFrame(this.loop);
