@@ -1175,6 +1175,15 @@ a {
 .av-player.touch-mode .hud-stat .v {
   font-size: clamp(12px, 3vw, 16px);
 }
+/* Stats redundantes en táctil: el motor ya los dibuja dentro del canvas (Frogger pinta la
+   barra de tiempo en TIMER_ROW y las ranas asentadas en las 5 casas), así que en pantallas
+   angostas se conserva el del canvas y se oculta el del HUD para que la fila no envuelva.
+   Solo afecta al modo táctil; en escritorio ambos stats se siguen mostrando completos. */
+.av-player.touch-mode .hud-stat.time,
+.av-player.touch-mode .hud-stat.homes {
+  display: none;
+}
+
 .av-player.touch-mode .hud-actions {
   gap: clamp(6px, 2vw, 10px);
 }
@@ -1228,6 +1237,14 @@ a {
 
 .av-player.touch-mode .touch-square-canvas {
   max-height: 30vh;
+}
+
+/* Canvas más alto que ancho y sin canvas secundario (hoy solo Frogger, 520x560): el tope
+   genérico de 34vh lo limita por altura mucho antes que por ancho, dejando la mitad del
+   ancho disponible sin usar y la celda de 40px del motor en ~12px. Se le da un tope mayor;
+   el ancho sigue acotado por max-width: 100%, así que nunca desborda. */
+.av-player.touch-mode .touch-portrait-canvas {
+  max-height: 44vh;
 }
 
 .av-player.touch-mode .next-piece-canvas {
@@ -1330,6 +1347,11 @@ a {
   }
   .av-player.touch-mode .touch-square-canvas {
     max-height: 22vh;
+  }
+  /* 360x640: el resto del reproductor (nav + HUD de una fila + marco CRT + D-pad de 140px)
+     consume ~376px, así que quedan ~264px (41vh) para el canvas; 38vh deja holgura. */
+  .av-player.touch-mode .touch-portrait-canvas {
+    max-height: 38vh;
   }
   .av-player.touch-mode .next-piece-canvas {
     max-width: clamp(48px, 18vw, 72px);

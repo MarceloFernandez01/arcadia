@@ -210,7 +210,13 @@ export default function GamePlayer({ game }: { game: Game }) {
             ref={canvasRef}
             width={registryEntry.width}
             height={registryEntry.height}
-            className={`${registryEntry.secondaryCanvas ? "game-canvas-fixed" : "game-canvas"}${isTouch ? " touch-scaled-canvas" : ""}${isTouch && registryEntry.width === registryEntry.height ? " touch-square-canvas" : ""}`}
+            className={`${registryEntry.secondaryCanvas ? "game-canvas-fixed" : "game-canvas"}${isTouch ? " touch-scaled-canvas" : ""}${isTouch && registryEntry.width === registryEntry.height ? " touch-square-canvas" : ""}${
+              isTouch &&
+              !registryEntry.secondaryCanvas &&
+              registryEntry.height > registryEntry.width
+                ? " touch-portrait-canvas"
+                : ""
+            }`}
             style={
               isTouch
                 ? {
