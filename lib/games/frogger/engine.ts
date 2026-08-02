@@ -1,4 +1,11 @@
-import { CELL_SIZE, GRID_COLS, GRID_ROWS, LANES } from "@/lib/games/frogger/lanes";
+import {
+  CELL_SIZE,
+  GRID_COLS,
+  GRID_ROWS,
+  LANES,
+  LEVEL_SPEED_MULT,
+  type LaneDef,
+} from "@/lib/games/frogger/lanes";
 import type { ArcadeGameEngine, ArcadeGameEngineOptions, EngineState } from "@/lib/games/types";
 
 const CANVAS_WIDTH = GRID_COLS * CELL_SIZE;
@@ -19,6 +26,21 @@ const PALETTE = {
   frog: "#22c55e",
   frogEye: "#eab308",
   frogHome: "#1f8a4c",
+  log: "#6b4a35",
+  logBorder: "#2e1c10",
+  turtle: "#2f9e44",
+  turtleShell: "#1f6e2e",
+  cyan: "#00f5ff",
+  magenta: "#ff006e",
+  yellow: "#f5ff00",
+};
+
+const ROAD_COLORS: Record<number, string> = {
+  7: PALETTE.magenta,
+  8: PALETTE.yellow,
+  9: PALETTE.cyan,
+  10: PALETTE.magenta,
+  11: PALETTE.yellow,
 };
 
 interface LaneObject {
@@ -40,7 +62,7 @@ export class FroggerEngine implements ArcadeGameEngine {
   private options: ArcadeGameEngineOptions;
 
   private frog!: Frog;
-  private lanes!: LaneObject[][];
+  private laneObjects!: LaneObject[][];
   private score = 0;
   private lives = TOTAL_LIVES;
   private level = 1;
@@ -94,7 +116,7 @@ export class FroggerEngine implements ArcadeGameEngine {
 
   private initGame() {
     this.frog = { col: START_COL, row: SIDEWALK_ROW, offsetX: 0, hopFromMs: 0 };
-    this.lanes = LANES.map(() => []);
+    this.laneObjects = LANES.map((lane) => this.initLaneObjects(lane));
     this.score = 0;
     this.lives = TOTAL_LIVES;
     this.level = 1;
@@ -103,6 +125,38 @@ export class FroggerEngine implements ArcadeGameEngine {
     this.lastNotified = null;
     this.notifyStateChange();
     this.draw();
+  }
+
+  private initLaneObjects(lane: LaneDef): LaneObject[] {
+    if (lane.kind !== "road" && lane.kind !== "log" && lane.kind !== "turtle") return [];
+    const width = lane.objectCells * CELL_SIZE;
+    const period = (lane.objectCells + lane.gapCells) * CELL_SIZE;
+    const count = Math.ceil(CANVAS_WIDTH / period) + 2;
+    return Array.from({ length: count }, (_, i) => ({ x: i * period, width }));
+  }
+
+  private laneRingLength(lane: LaneDef): number {
+    const period = (lane.objectCells + lane.gapCells) * CELL_SIZE;
+    const count = this.laneObjects[lane.row]?.length ?? 0;
+    return period * count;
+  }
+
+  private updateLanes(dt: number) {
+    const mult = LEVEL_SPEED_MULT(this.level);
+    for (const lane of LANES) {
+      if (lane.kind !== "road" && lane.kind !== "log" && lane.kind !== "turtle") continue;
+      const objects = this.laneObjects[lane.row];
+      const ringLength = this.laneRingLength(lane);
+      const dx = lane.direction * lane.speed * mult * (dt / 1000);
+      for (const obj of objects) {
+        obj.x += dx;
+        if (lane.direction === 1 && obj.x > CANVAS_WIDTH) {
+          obj.x -= ringLength;
+        } else if (lane.direction === -1 && obj.x + obj.width < 0) {
+          obj.x += ringLength;
+        }
+      }
+    }
   }
 
   private notifyStateChange() {
@@ -180,8 +234,44 @@ export class FroggerEngine implements ArcadeGameEngine {
     ctx.fillRect(cx + 5, cy - 10, 5, 5);
   }
 
+  private drawLaneObjects() {
+    const ctx = this.ctx;
+    for (const lane of LANES) {
+      const objects = this.laneObjects[lane.row];
+      if (objects.length === 0) continue;
+      const y = lane.row * CELL_SIZE;
+      const height = CELL_SIZE - 8;
+      if (lane.kind === "road") {
+        ctx.fillStyle = ROAD_COLORS[lane.row] ?? PALETTE.cyan;
+        for (const obj of objects) {
+          ctx.fillRect(obj.x, y + 4, obj.width, height);
+        }
+      } else if (lane.kind === "log") {
+        ctx.fillStyle = PALETTE.log;
+        ctx.strokeStyle = PALETTE.logBorder;
+        ctx.lineWidth = 2;
+        for (const obj of objects) {
+          ctx.fillRect(obj.x, y + 4, obj.width, height);
+          ctx.strokeRect(obj.x, y + 4, obj.width, height);
+        }
+      } else if (lane.kind === "turtle") {
+        const inset = 6;
+        const turtleHeight = height - 8;
+        ctx.fillStyle = PALETTE.turtle;
+        for (const obj of objects) {
+          ctx.fillRect(obj.x + inset, y + 8, obj.width - inset * 2, turtleHeight);
+        }
+        ctx.fillStyle = PALETTE.turtleShell;
+        for (const obj of objects) {
+          ctx.fillRect(obj.x + inset + 3, y + 11, obj.width - inset * 2 - 6, turtleHeight - 6);
+        }
+      }
+    }
+  }
+
   private draw() {
     this.drawBoard();
+    this.drawLaneObjects();
     this.drawFrog();
   }
 
@@ -193,7 +283,10 @@ export class FroggerEngine implements ArcadeGameEngine {
       return;
     }
 
+    const dt = ts - this.lastTime;
     this.lastTime = ts;
+
+    this.updateLanes(dt);
 
     this.draw();
     if (this.running) this.rafId = requestAnimationFrame(this.loop);
