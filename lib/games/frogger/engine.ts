@@ -30,6 +30,8 @@ const PALETTE = {
   logBorder: "#2e1c10",
   turtle: "#2f9e44",
   turtleShell: "#1f6e2e",
+  turtleWarn: "#8a5a1f",
+  turtleSubmerged: "#0e4a63",
   cyan: "#00f5ff",
   magenta: "#ff006e",
   yellow: "#f5ff00",
@@ -44,6 +46,10 @@ const ROAD_COLORS: Record<number, string> = {
 };
 
 const HOP_DURATION_MS = 100;
+
+const TURTLE_CYCLE_MS = 4000;
+const TURTLE_FLOAT_MS = 2400;
+const TURTLE_WARN_MS = 800;
 
 interface HopDirection {
   dCol: number;
@@ -253,7 +259,13 @@ export class FroggerEngine implements ArcadeGameEngine {
     const width = lane.objectCells * CELL_SIZE;
     const period = (lane.objectCells + lane.gapCells) * CELL_SIZE;
     const count = Math.ceil(CANVAS_WIDTH / period) + 2;
-    return Array.from({ length: count }, (_, i) => ({ x: i * period, width }));
+    return Array.from({ length: count }, (_, i) => ({
+      x: i * period,
+      width,
+      ...(lane.kind === "turtle"
+        ? { phaseMs: (i * TURTLE_CYCLE_MS) / count, submerged: false }
+        : {}),
+    }));
   }
 
   private laneRingLength(lane: LaneDef): number {
@@ -275,6 +287,10 @@ export class FroggerEngine implements ArcadeGameEngine {
           obj.x -= ringLength;
         } else if (lane.direction === -1 && obj.x + obj.width < 0) {
           obj.x += ringLength;
+        }
+        if (lane.kind === "turtle") {
+          obj.phaseMs = ((obj.phaseMs ?? 0) + dt) % TURTLE_CYCLE_MS;
+          obj.submerged = obj.phaseMs >= TURTLE_FLOAT_MS + TURTLE_WARN_MS;
         }
       }
     }
@@ -420,12 +436,19 @@ export class FroggerEngine implements ArcadeGameEngine {
       } else if (lane.kind === "turtle") {
         const inset = 6;
         const turtleHeight = height - 8;
-        ctx.fillStyle = PALETTE.turtle;
         for (const obj of objects) {
+          const phase = obj.phaseMs ?? 0;
+          const warning = !obj.submerged && phase >= TURTLE_FLOAT_MS;
+          if (obj.submerged) {
+            ctx.strokeStyle = PALETTE.turtleSubmerged;
+            ctx.lineWidth = 1;
+            ctx.strokeRect(obj.x + inset, y + 8, obj.width - inset * 2, turtleHeight);
+            continue;
+          }
+          const blinkOn = Math.floor(phase / 150) % 2 === 0;
+          ctx.fillStyle = warning && !blinkOn ? PALETTE.turtleWarn : PALETTE.turtle;
           ctx.fillRect(obj.x + inset, y + 8, obj.width - inset * 2, turtleHeight);
-        }
-        ctx.fillStyle = PALETTE.turtleShell;
-        for (const obj of objects) {
+          ctx.fillStyle = PALETTE.turtleShell;
           ctx.fillRect(obj.x + inset + 3, y + 11, obj.width - inset * 2 - 6, turtleHeight - 6);
         }
       }
