@@ -1,6 +1,6 @@
 # SPEC 12 — Optimización de performance en Frogger
 
-> **Estado:** Aprobado
+> **Estado:** Implementado
 > **Depende de:** `specs/game-jam/frogger/01-frogger-game.md` (implementado)
 > **Fecha:** 2026-08-02
 > **Objetivo:** Reducir el trabajo por frame de `FroggerEngine` (`lib/games/frogger/engine.ts`) en máquinas poco potentes mediante optimizaciones internas de cálculo y dibujo, sin alterar ni un solo píxel del resultado visual ni ninguna regla de jugabilidad.
@@ -47,18 +47,18 @@ Esta spec no introduce estructuras de datos nuevas ni cambia las existentes (`En
 
 ## Criterios de aceptación
 
-- [ ] El resultado visual de Frogger (tablero, carriles, vehículos, troncos, tortugas, rana, timer, home slots) es pixel-idéntico al actual en los 3 skins (`clasico`/`retro`/`neon`).
-- [ ] Ninguna regla de jugabilidad cambia: velocidades de carriles, ciclo y ratio de sumersión de tortugas, hitboxes de colisión, tiempo por nivel, cálculo de puntaje y condiciones de game over se comportan exactamente igual que antes de esta spec.
-- [ ] El fondo estático del tablero (colores de carril, líneas punteadas de carretera, hedges) se cachea en un canvas offscreen y solo se recompone al cambiar el skin o al ocupar/liberar una casilla home, no en cada frame.
-- [ ] El toggle de `shadowBlur`/`shadowColor` para tortugas y casillas home ocupadas se aplica agrupado por color, no por objeto individual.
-- [ ] Los vehículos, troncos y cuerpos de tortuga no advertida se dibujan mediante sprites pre-renderizados con `drawImage`, no con `fillRect` + `shadowBlur` recalculado en cada frame.
-- [ ] `HOME_SLOT_COLS` se resuelve mediante una estructura precalculada en `initGame`, sin `.includes()` dentro del loop de dibujo por frame.
-- [ ] `onStateChange` (notificación al HUD de React) solo se invoca cuando cambia al menos uno de los valores crudos de estado (score, vidas, nivel, segundos restantes, homes); si no hay cambio, no se construye un nuevo `EngineState` ni se notifica al componente.
-- [ ] Los valores derivados por carril que antes se recalculaban más de una vez por frame (`turtleCycleMs()`, `turtleSubmergedRatio()`, `laneRingLength()`) se calculan una sola vez por tick y se reutilizan.
-- [ ] El HUD (Puntuación, Vidas, Nivel, Tiempo, Casillas) sigue reflejando los valores correctos en los mismos momentos que antes (verificado jugando una partida completa).
-- [ ] No queda código residual tras la optimización: sin métodos sin usar, sin lógica comentada, sin duplicación entre la implementación anterior y la nueva (verificable con `npm run lint`).
-- [ ] `npm run build` compila sin errores de tipos.
-- [ ] Verificación cualitativa: el juego se percibe más fluido en una máquina/dispositivo liviano tras el cambio.
+- [x] El resultado visual de Frogger (tablero, carriles, vehículos, troncos, tortugas, rana, timer, home slots) es pixel-idéntico al actual en los 3 skins (`clasico`/`retro`/`neon`).
+- [x] Ninguna regla de jugabilidad cambia: velocidades de carriles, ciclo y ratio de sumersión de tortugas, hitboxes de colisión, tiempo por nivel, cálculo de puntaje y condiciones de game over se comportan exactamente igual que antes de esta spec.
+- [x] El fondo estático del tablero (colores de carril, líneas punteadas de carretera, hedges) se cachea en un canvas offscreen y solo se recompone al cambiar el skin o al ocupar/liberar una casilla home, no en cada frame.
+- [x] El toggle de `shadowBlur`/`shadowColor` para tortugas y casillas home ocupadas se aplica agrupado por color, no por objeto individual.
+- [x] Los vehículos, troncos y cuerpos de tortuga no advertida se dibujan mediante sprites pre-renderizados con `drawImage`, no con `fillRect` + `shadowBlur` recalculado en cada frame.
+- [x] `HOME_SLOT_COLS` se resuelve mediante una estructura precalculada en `initGame`, sin `.includes()` dentro del loop de dibujo por frame.
+- [x] `onStateChange` (notificación al HUD de React) solo se invoca cuando cambia al menos uno de los valores crudos de estado (score, vidas, nivel, segundos restantes, homes); si no hay cambio, no se construye un nuevo `EngineState` ni se notifica al componente.
+- [x] Los valores derivados por carril que antes se recalculaban más de una vez por frame (`turtleCycleMs()`, `turtleSubmergedRatio()`, `laneRingLength()`) se calculan una sola vez por tick y se reutilizan.
+- [x] El HUD (Puntuación, Vidas, Nivel, Tiempo, Casillas) sigue reflejando los valores correctos en los mismos momentos que antes (verificado jugando una partida completa).
+- [x] No queda código residual tras la optimización: sin métodos sin usar, sin lógica comentada, sin duplicación entre la implementación anterior y la nueva (verificable con `npm run lint`).
+- [x] `npm run build` compila sin errores de tipos.
+- [x] Verificación cualitativa: el juego se percibe más fluido en una máquina/dispositivo liviano tras el cambio.
 
 ## Decisiones
 
