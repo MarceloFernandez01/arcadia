@@ -77,6 +77,7 @@ export class FroggerEngine implements ArcadeGameEngine {
   private laneObjects!: LaneObject[][];
   private queuedHop: HopDirection | null = null;
   private homesOccupied!: boolean[];
+  private homeSlotColSet!: Set<number>;
   private minRowReached = SIDEWALK_ROW;
   private score = 0;
   private lives = TOTAL_LIVES;
@@ -157,6 +158,7 @@ export class FroggerEngine implements ArcadeGameEngine {
   private initGame() {
     this.laneObjects = LANES.map((lane) => this.initLaneObjects(lane));
     this.homesOccupied = Array(TOTAL_HOMES).fill(false);
+    this.homeSlotColSet = new Set(HOME_SLOT_COLS);
     this.score = 0;
     this.lives = TOTAL_LIVES;
     this.level = 1;
@@ -453,7 +455,7 @@ export class FroggerEngine implements ArcadeGameEngine {
     const palette = this.palette;
     const y = 0;
     for (let col = 0; col < GRID_COLS; col++) {
-      if (HOME_SLOT_COLS.includes(col)) continue;
+      if (this.homeSlotColSet.has(col)) continue;
       ctx.fillStyle = palette.hedge;
       ctx.fillRect(col * CELL_SIZE, y, CELL_SIZE, CELL_SIZE);
     }
