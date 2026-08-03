@@ -71,6 +71,10 @@ export class FroggerEngine implements ArcadeGameEngine {
   private ctx: CanvasRenderingContext2D;
   private staticBoardCanvas: HTMLCanvasElement;
   private staticBoardCtx: CanvasRenderingContext2D;
+  private vehicleSprites = new Map<string, HTMLCanvasElement>();
+  private logSprites = new Map<number, HTMLCanvasElement>();
+  private turtleBodySprites = new Map<number, HTMLCanvasElement>();
+  private spritePadding = 0;
   private options: ArcadeGameEngineOptions;
   private skin: SkinId;
   private palette: FroggerPalette;
@@ -154,6 +158,7 @@ export class FroggerEngine implements ArcadeGameEngine {
   setColorScheme(scheme: string) {
     this.skin = resolveSkin(scheme, GAME_ID);
     this.palette = FROGGER_SKINS[this.skin];
+    this.renderSprites();
     this.renderStaticBoard();
     // Redibuja de inmediato para que el cambio se vea también con el juego en pausa.
     this.draw();
@@ -175,6 +180,7 @@ export class FroggerEngine implements ArcadeGameEngine {
     this.gameOver = false;
     this.lastNotified = null;
     this.respawnFrog();
+    this.renderSprites();
     this.renderStaticBoard();
     this.notifyStateChange();
     this.draw();
@@ -428,6 +434,84 @@ export class FroggerEngine implements ArcadeGameEngine {
     this.ctx.shadowBlur = 0;
   }
 
+  /** Genera los sprites con el glow del skin actual horneado, cacheados por color+tamaño. */
+  private renderSprites() {
+    this.vehicleSprites.clear();
+    this.logSprites.clear();
+    this.turtleBodySprites.clear();
+    this.spritePadding = this.palette.glow > 0 ? this.palette.glow * 3 : 0;
+    const objectHeight = CELL_SIZE - 8;
+
+    for (const lane of LANES) {
+      if (lane.kind !== "road") continue;
+      const width = lane.objectCells * CELL_SIZE;
+      const color =
+        this.palette.vehicles[(ROAD_COLOR_INDEX[lane.row] ?? 0) % this.palette.vehicles.length];
+      const key = `${width}:${color}`;
+      if (this.vehicleSprites.has(key)) continue;
+      this.vehicleSprites.set(key, this.bakeVehicleSprite(width, objectHeight, color));
+    }
+
+    for (const lane of LANES) {
+      if (lane.kind !== "log") continue;
+      const width = lane.objectCells * CELL_SIZE;
+      if (this.logSprites.has(width)) continue;
+      this.logSprites.set(width, this.bakeLogSprite(width, objectHeight));
+    }
+
+    for (const lane of LANES) {
+      if (lane.kind !== "turtle") continue;
+      const width = lane.objectCells * CELL_SIZE;
+      if (this.turtleBodySprites.has(width)) continue;
+      this.turtleBodySprites.set(width, this.bakeTurtleBodySprite(width, objectHeight));
+    }
+  }
+
+  private bakeVehicleSprite(width: number, height: number, color: string): HTMLCanvasElement {
+    const pad = this.spritePadding;
+    const sprite = document.createElement("canvas");
+    sprite.width = width + pad * 2;
+    sprite.height = height + pad * 2;
+    const ctx = sprite.getContext("2d")!;
+    ctx.fillStyle = color;
+    ctx.shadowBlur = this.palette.glow;
+    ctx.shadowColor = color;
+    ctx.fillRect(pad, pad, width, height);
+    return sprite;
+  }
+
+  private bakeLogSprite(width: number, height: number): HTMLCanvasElement {
+    const pad = this.spritePadding;
+    const sprite = document.createElement("canvas");
+    sprite.width = width + pad * 2;
+    sprite.height = height + pad * 2;
+    const ctx = sprite.getContext("2d")!;
+    ctx.fillStyle = this.palette.log;
+    ctx.strokeStyle = this.palette.logBorder;
+    ctx.lineWidth = 2;
+    ctx.shadowBlur = this.palette.glow;
+    ctx.shadowColor = this.palette.log;
+    ctx.fillRect(pad, pad, width, height);
+    ctx.strokeRect(pad, pad, width, height);
+    return sprite;
+  }
+
+  private bakeTurtleBodySprite(objWidth: number, laneHeight: number): HTMLCanvasElement {
+    const inset = 6;
+    const bodyWidth = objWidth - inset * 2;
+    const turtleHeight = laneHeight - 8;
+    const pad = this.spritePadding;
+    const sprite = document.createElement("canvas");
+    sprite.width = bodyWidth + pad * 2;
+    sprite.height = turtleHeight + pad * 2;
+    const ctx = sprite.getContext("2d")!;
+    ctx.fillStyle = this.palette.turtle;
+    ctx.shadowBlur = this.palette.glow;
+    ctx.shadowColor = this.palette.turtle;
+    ctx.fillRect(pad, pad, bodyWidth, turtleHeight);
+    return sprite;
+  }
+
   private drawBoard() {
     const ctx = this.ctx;
     const palette = this.palette;
@@ -470,7 +554,7 @@ export class FroggerEngine implements ArcadeGameEngine {
       ctx.fillStyle = palette.hedge;
       ctx.fillRect(col * CELL_SIZE, y, CELL_SIZE, CELL_SIZE);
     }
-    HOME_SLOT_COLS.forEach((col, i) => {
+    HOME_SLOT_COLS.forEach((col) => {
       const x = col * CELL_SIZE;
       ctx.fillStyle = palette.homeOpen;
       ctx.fillRect(x + 3, y + 3, CELL_SIZE - 6, CELL_SIZE - 6);
@@ -479,18 +563,26 @@ export class FroggerEngine implements ArcadeGameEngine {
       this.applyGlow(palette.homeOpenBorder);
       ctx.strokeRect(x + 3, y + 3, CELL_SIZE - 6, CELL_SIZE - 6);
       this.clearGlow();
-      if (this.homesOccupied[i]) {
-        const cx = x + CELL_SIZE / 2;
+    });
+
+    const occupiedCols = HOME_SLOT_COLS.filter((_, i) => this.homesOccupied[i]);
+    if (occupiedCols.length > 0) {
+      ctx.fillStyle = palette.frog;
+      this.applyGlow(palette.frog);
+      for (const col of occupiedCols) {
+        const cx = col * CELL_SIZE + CELL_SIZE / 2;
         const cy = y + CELL_SIZE / 2;
-        ctx.fillStyle = palette.frog;
-        this.applyGlow(palette.frog);
         ctx.fillRect(cx - 11, cy - 11, 22, 22);
-        this.clearGlow();
-        ctx.fillStyle = palette.frogEye;
+      }
+      this.clearGlow();
+      ctx.fillStyle = palette.frogEye;
+      for (const col of occupiedCols) {
+        const cx = col * CELL_SIZE + CELL_SIZE / 2;
+        const cy = y + CELL_SIZE / 2;
         ctx.fillRect(cx - 8, cy - 8, 4, 4);
         ctx.fillRect(cx + 4, cy - 8, 4, 4);
       }
-    });
+    }
   }
 
   private drawTimerBar() {
@@ -536,45 +628,66 @@ export class FroggerEngine implements ArcadeGameEngine {
       if (lane.kind === "road") {
         const vehicleColor =
           palette.vehicles[(ROAD_COLOR_INDEX[lane.row] ?? 0) % palette.vehicles.length];
-        ctx.fillStyle = vehicleColor;
-        this.applyGlow(vehicleColor);
+        const sprite = this.vehicleSprites.get(`${lane.objectCells * CELL_SIZE}:${vehicleColor}`)!;
+        const pad = this.spritePadding;
         for (const obj of objects) {
-          ctx.fillRect(obj.x, y + 4, obj.width, height);
+          ctx.drawImage(sprite, obj.x - pad, y + 4 - pad);
         }
-        this.clearGlow();
       } else if (lane.kind === "log") {
-        ctx.fillStyle = palette.log;
-        ctx.strokeStyle = palette.logBorder;
-        ctx.lineWidth = 2;
-        this.applyGlow(palette.log);
+        const sprite = this.logSprites.get(lane.objectCells * CELL_SIZE)!;
+        const pad = this.spritePadding;
         for (const obj of objects) {
-          ctx.fillRect(obj.x, y + 4, obj.width, height);
-          ctx.strokeRect(obj.x, y + 4, obj.width, height);
+          ctx.drawImage(sprite, obj.x - pad, y + 4 - pad);
         }
-        this.clearGlow();
       } else if (lane.kind === "turtle") {
         const inset = 6;
         const turtleHeight = height - 8;
         const cycle = this.turtleCycleMs();
         const floatEnd = cycle * (1 - TURTLE_WARN_RATIO - this.turtleSubmergedRatio());
+
+        const submergedObjs: LaneObject[] = [];
+        const warnObjs: LaneObject[] = [];
+        const normalObjs: LaneObject[] = [];
         for (const obj of objects) {
-          const phase = obj.phaseMs ?? 0;
-          const warning = !obj.submerged && phase >= floatEnd;
           if (obj.submerged) {
-            ctx.strokeStyle = palette.turtleSubmerged;
-            ctx.lineWidth = 1;
-            this.applyGlow(palette.turtleSubmerged);
-            ctx.strokeRect(obj.x + inset, y + 8, obj.width - inset * 2, turtleHeight);
-            this.clearGlow();
+            submergedObjs.push(obj);
             continue;
           }
+          const phase = obj.phaseMs ?? 0;
+          const warning = phase >= floatEnd;
           const blinkOn = Math.floor(phase / 150) % 2 === 0;
-          const bodyColor = warning && !blinkOn ? palette.turtleWarn : palette.turtle;
-          ctx.fillStyle = bodyColor;
-          this.applyGlow(bodyColor);
-          ctx.fillRect(obj.x + inset, y + 8, obj.width - inset * 2, turtleHeight);
+          (warning && !blinkOn ? warnObjs : normalObjs).push(obj);
+        }
+
+        if (submergedObjs.length > 0) {
+          ctx.strokeStyle = palette.turtleSubmerged;
+          ctx.lineWidth = 1;
+          this.applyGlow(palette.turtleSubmerged);
+          for (const obj of submergedObjs) {
+            ctx.strokeRect(obj.x + inset, y + 8, obj.width - inset * 2, turtleHeight);
+          }
           this.clearGlow();
-          ctx.fillStyle = palette.turtleShell;
+        }
+
+        if (warnObjs.length > 0) {
+          ctx.fillStyle = palette.turtleWarn;
+          this.applyGlow(palette.turtleWarn);
+          for (const obj of warnObjs) {
+            ctx.fillRect(obj.x + inset, y + 8, obj.width - inset * 2, turtleHeight);
+          }
+          this.clearGlow();
+        }
+        if (normalObjs.length > 0) {
+          const sprite = this.turtleBodySprites.get(lane.objectCells * CELL_SIZE)!;
+          const pad = this.spritePadding;
+          for (const obj of normalObjs) {
+            ctx.drawImage(sprite, obj.x + inset - pad, y + 8 - pad);
+          }
+        }
+
+        ctx.fillStyle = palette.turtleShell;
+        for (const obj of objects) {
+          if (obj.submerged) continue;
           ctx.fillRect(obj.x + inset + 3, y + 11, obj.width - inset * 2 - 6, turtleHeight - 6);
         }
       }
