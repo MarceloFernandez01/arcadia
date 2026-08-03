@@ -69,6 +69,8 @@ interface Frog {
 
 export class FroggerEngine implements ArcadeGameEngine {
   private ctx: CanvasRenderingContext2D;
+  private staticBoardCanvas: HTMLCanvasElement;
+  private staticBoardCtx: CanvasRenderingContext2D;
   private options: ArcadeGameEngineOptions;
   private skin: SkinId;
   private palette: FroggerPalette;
@@ -107,6 +109,12 @@ export class FroggerEngine implements ArcadeGameEngine {
     const ctx = canvas.getContext("2d");
     if (!ctx) throw new Error("No se pudo obtener el contexto 2D del canvas");
     this.ctx = ctx;
+    this.staticBoardCanvas = document.createElement("canvas");
+    this.staticBoardCanvas.width = CANVAS_WIDTH;
+    this.staticBoardCanvas.height = CANVAS_HEIGHT;
+    const staticCtx = this.staticBoardCanvas.getContext("2d");
+    if (!staticCtx) throw new Error("No se pudo obtener el contexto 2D del canvas offscreen");
+    this.staticBoardCtx = staticCtx;
     this.options = options;
     this.skin = resolveSkin(options.initialColorScheme, GAME_ID);
     this.palette = FROGGER_SKINS[this.skin];
@@ -146,6 +154,7 @@ export class FroggerEngine implements ArcadeGameEngine {
   setColorScheme(scheme: string) {
     this.skin = resolveSkin(scheme, GAME_ID);
     this.palette = FROGGER_SKINS[this.skin];
+    this.renderStaticBoard();
     // Redibuja de inmediato para que el cambio se vea también con el juego en pausa.
     this.draw();
   }
@@ -166,6 +175,7 @@ export class FroggerEngine implements ArcadeGameEngine {
     this.gameOver = false;
     this.lastNotified = null;
     this.respawnFrog();
+    this.renderStaticBoard();
     this.notifyStateChange();
     this.draw();
   }
@@ -337,6 +347,7 @@ export class FroggerEngine implements ArcadeGameEngine {
       this.homesOccupied = Array(TOTAL_HOMES).fill(false);
       this.homes = 0;
     }
+    this.renderStaticBoard();
     this.respawnFrog();
   }
 
@@ -570,8 +581,15 @@ export class FroggerEngine implements ArcadeGameEngine {
     }
   }
 
-  private draw() {
+  private renderStaticBoard() {
+    const mainCtx = this.ctx;
+    this.ctx = this.staticBoardCtx;
     this.drawBoard();
+    this.ctx = mainCtx;
+  }
+
+  private draw() {
+    this.ctx.drawImage(this.staticBoardCanvas, 0, 0);
     this.drawLaneObjects();
     this.drawTimerBar();
     this.drawFrog();
