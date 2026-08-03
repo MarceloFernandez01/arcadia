@@ -91,7 +91,11 @@ export class FroggerEngine implements ArcadeGameEngine {
   private homes = 0;
   private timeLeftMs = 0;
   private gameOver = false;
-  private lastNotified: EngineState | null = null;
+  private lastNotifiedScore: number | null = null;
+  private lastNotifiedLives = -1;
+  private lastNotifiedLevel = -1;
+  private lastNotifiedTimeSec = -1;
+  private lastNotifiedHomes = -1;
 
   private lastTime: number | null = null;
   private rafId: number | null = null;
@@ -161,7 +165,7 @@ export class FroggerEngine implements ArcadeGameEngine {
     this.renderSprites();
     this.renderStaticBoard();
     // Redibuja de inmediato para que el cambio se vea también con el juego en pausa.
-    this.draw();
+    this.draw(this.turtleCycleMs(), this.turtleSubmergedRatio());
   }
 
   destroy() {
@@ -178,12 +182,16 @@ export class FroggerEngine implements ArcadeGameEngine {
     this.level = 1;
     this.homes = 0;
     this.gameOver = false;
-    this.lastNotified = null;
+    this.lastNotifiedScore = null;
+    this.lastNotifiedLives = -1;
+    this.lastNotifiedLevel = -1;
+    this.lastNotifiedTimeSec = -1;
+    this.lastNotifiedHomes = -1;
     this.respawnFrog();
     this.renderSprites();
     this.renderStaticBoard();
     this.notifyStateChange();
-    this.draw();
+    this.draw(this.turtleCycleMs(), this.turtleSubmergedRatio());
   }
 
   private respawnFrog() {
@@ -301,14 +309,18 @@ export class FroggerEngine implements ArcadeGameEngine {
     );
   }
 
-  private updateLanes(dt: number) {
+  private updateLanes(
+    dt: number,
+    turtleCycle: number,
+    turtleSubmergedRatio: number,
+    ringLengths: Map<number, number>,
+  ) {
     const mult = LEVEL_SPEED_MULT(this.level);
-    const turtleCycle = this.turtleCycleMs();
-    const submergedStart = turtleCycle * (1 - this.turtleSubmergedRatio());
+    const submergedStart = turtleCycle * (1 - turtleSubmergedRatio);
     for (const lane of LANES) {
       if (lane.kind !== "road" && lane.kind !== "log" && lane.kind !== "turtle") continue;
       const objects = this.laneObjects[lane.row];
-      const ringLength = this.laneRingLength(lane);
+      const ringLength = ringLengths.get(lane.row) ?? 0;
       const dx = lane.direction * lane.speed * mult * (dt / 1000);
       for (const obj of objects) {
         obj.x += dx;
@@ -404,24 +416,32 @@ export class FroggerEngine implements ArcadeGameEngine {
   }
 
   private notifyStateChange() {
+    const timeSec = Math.ceil(this.timeLeftMs / 1000);
+    if (
+      this.score === this.lastNotifiedScore &&
+      this.lives === this.lastNotifiedLives &&
+      this.level === this.lastNotifiedLevel &&
+      timeSec === this.lastNotifiedTimeSec &&
+      this.homes === this.lastNotifiedHomes
+    ) {
+      return;
+    }
+    this.lastNotifiedScore = this.score;
+    this.lastNotifiedLives = this.lives;
+    this.lastNotifiedLevel = this.level;
+    this.lastNotifiedTimeSec = timeSec;
+    this.lastNotifiedHomes = this.homes;
+
     const current: EngineState = {
       score: this.score,
       stats: [
         { key: "lives", label: "Vidas", value: "♥ ".repeat(this.lives).trim() },
         { key: "level", label: "Nivel", value: this.level.toString().padStart(2, "0") },
-        { key: "time", label: "Tiempo", value: Math.ceil(this.timeLeftMs / 1000).toString() },
+        { key: "time", label: "Tiempo", value: timeSec.toString() },
         { key: "homes", label: "Casillas", value: `${this.homes}/${TOTAL_HOMES}` },
       ],
     };
-    const prev = this.lastNotified;
-    if (
-      !prev ||
-      prev.score !== current.score ||
-      current.stats.some((stat, i) => prev.stats[i].value !== stat.value)
-    ) {
-      this.lastNotified = current;
-      this.options.onStateChange(current);
-    }
+    this.options.onStateChange(current);
   }
 
   /** Activa el resplandor del skin; con `glow: 0` no altera el trazo. */
@@ -617,7 +637,7 @@ export class FroggerEngine implements ArcadeGameEngine {
     ctx.fillRect(cx + 5, cy - 10, 5, 5);
   }
 
-  private drawLaneObjects() {
+  private drawLaneObjects(turtleCycle: number, turtleSubmergedRatio: number) {
     const ctx = this.ctx;
     const palette = this.palette;
     for (const lane of LANES) {
@@ -642,8 +662,7 @@ export class FroggerEngine implements ArcadeGameEngine {
       } else if (lane.kind === "turtle") {
         const inset = 6;
         const turtleHeight = height - 8;
-        const cycle = this.turtleCycleMs();
-        const floatEnd = cycle * (1 - TURTLE_WARN_RATIO - this.turtleSubmergedRatio());
+        const floatEnd = turtleCycle * (1 - TURTLE_WARN_RATIO - turtleSubmergedRatio);
 
         const submergedObjs: LaneObject[] = [];
         const warnObjs: LaneObject[] = [];
@@ -701,17 +720,20 @@ export class FroggerEngine implements ArcadeGameEngine {
     this.ctx = mainCtx;
   }
 
-  private draw() {
+  private draw(turtleCycle: number, turtleSubmergedRatio: number) {
     this.ctx.drawImage(this.staticBoardCanvas, 0, 0);
-    this.drawLaneObjects();
+    this.drawLaneObjects(turtleCycle, turtleSubmergedRatio);
     this.drawTimerBar();
     this.drawFrog();
   }
 
   private loop = (ts: number) => {
+    const turtleCycle = this.turtleCycleMs();
+    const turtleSubmergedRatio = this.turtleSubmergedRatio();
+
     if (this.lastTime === null) {
       this.lastTime = ts;
-      this.draw();
+      this.draw(turtleCycle, turtleSubmergedRatio);
       if (this.running) this.rafId = requestAnimationFrame(this.loop);
       return;
     }
@@ -719,14 +741,21 @@ export class FroggerEngine implements ArcadeGameEngine {
     const dt = ts - this.lastTime;
     this.lastTime = ts;
 
-    this.updateLanes(dt);
+    const ringLengths = new Map<number, number>();
+    for (const lane of LANES) {
+      if (lane.kind === "road" || lane.kind === "log" || lane.kind === "turtle") {
+        ringLengths.set(lane.row, this.laneRingLength(lane));
+      }
+    }
+
+    this.updateLanes(dt, turtleCycle, turtleSubmergedRatio, ringLengths);
     this.settleHop(ts);
     this.updateFrogSupport(dt);
     this.updateTimer(dt);
     this.consumeQueuedHop(ts);
     this.notifyStateChange();
 
-    this.draw();
+    this.draw(turtleCycle, turtleSubmergedRatio);
     if (this.running) this.rafId = requestAnimationFrame(this.loop);
   };
 }
