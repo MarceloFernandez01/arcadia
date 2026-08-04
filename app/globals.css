@@ -1001,6 +1001,9 @@ a {
   display: flex;
   gap: 10px;
 }
+.pause-btn {
+  min-width: 90px;
+}
 
 .scheme-select {
   padding: 6px 10px;
