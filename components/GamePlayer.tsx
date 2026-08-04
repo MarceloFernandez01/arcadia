@@ -191,8 +191,8 @@ export default function GamePlayer({ game }: { game: Game }) {
           </div>
         ) : (
           <div className="hud-actions">
-            <button className="btn yellow" onClick={togglePause}>
-              {paused ? "REANUDAR" : "PAUSA"}
+            <button className="btn yellow pause-btn" onClick={togglePause}>
+              {paused ? "SEGUIR" : "PAUSA"}
             </button>
             <button className="btn magenta" onClick={endGame}>
               FIN
