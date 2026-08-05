@@ -74,6 +74,17 @@ Flujo de Spec Driven Design (skills globales en `~/.claude/skills/`):
   el HUD del reproductor quede en una sola línea a 360px (con una escalera de recursos que llega hasta
   abreviar etiquetas en modo táctil como último recurso, solo en táctil). Mantiene memoria en
   `references/mobile-review-log.md`.
+- `game-performance` (`.claude/agents/game-performance.md`) — optimiza el rendimiento por frame del
+  motor de un juego concreto (fondo estático cacheado en canvas offscreen, sprites con glow horneado,
+  glow agrupado por lote de color, lookups precalculados, notificación al HUD condicional a un cambio
+  real, derivados cacheados por tick), siguiendo el catálogo de `specs/12-optimizacion-performance-frogger.md`,
+  cuya implementación en `lib/games/frogger/engine.ts` es su referencia canónica. **Solo se ejecuta cuando
+  el usuario u otro agente le indica explícitamente qué juego optimizar**: nunca elige el juego por su
+  cuenta ni se dispara solo; sin un juego indicado, se detiene sin tocar código. Si el juego indicado no
+  figura en su memoria, lo analiza igual desde cero antes de optimizarlo. Sí escribe código, pero verifica
+  de forma **estática** (lectura de código + `npm run build`/`npm run lint`, sin Playwright ni navegador);
+  la comprobación visual final queda a cargo del usuario. Ninguna optimización puede alterar el resultado
+  visual ni la jugabilidad. Mantiene memoria en `references/game-performance-log.md`.
 
 ## Dev server
 
@@ -110,3 +121,5 @@ Ver `supabase/CLAUDE.md` para el detalle de migraciones, seeds y validación de 
 **Catálogo actual y memoria del planificador** (`references/implemented-games.md`, `references/game-ideas.md`, `references/game-suggestions-todo.md`): estado del catálogo de juegos y memoria/backlog que mantiene el agente `game-planner` (ver "Agentes" arriba).
 
 **Memoria de skins** (`references/game-with-theme.md`): estado de skins (`clasico`/`retro`/`neon`) por juego que mantiene el agente `skin-designer` (ver "Agentes" arriba).
+
+**Memoria de performance** (`references/game-performance-log.md`): estado de optimización por juego que mantiene el agente `game-performance` (ver "Agentes" arriba).
