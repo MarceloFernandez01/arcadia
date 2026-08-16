@@ -62,19 +62,19 @@ Esta spec no agrega ninguna migración a `supabase/migrations/`.
 
 ## Criterios de aceptación
 
-- [ ] Un usuario nuevo puede registrarse con email/contraseña + nombre desde `/auth`, recibe un correo de confirmación y no puede iniciar sesión hasta confirmarlo.
-- [ ] Tras hacer clic en el link de confirmación del correo, el usuario queda con sesión iniciada y es redirigido a `/biblioteca`.
-- [ ] Un usuario ya registrado puede iniciar sesión con email/contraseña; credenciales inválidas o correo no confirmado muestran un mensaje de error en el formulario, sin redirigir.
-- [ ] Un usuario puede iniciar sesión con Google y con GitHub desde los botones correspondientes en `/auth`.
-- [ ] "JUGAR COMO INVITADO" sigue funcionando exactamente igual que antes: permite jugar sin cuenta, sin pedir email ni contraseña.
-- [ ] Un usuario puede solicitar "¿Olvidaste tu contraseña?", recibe un correo, y desde el link puede definir una contraseña nueva y volver a iniciar sesión con ella.
-- [ ] El nombre mostrado en `Nav.tsx` (`{user.name} ▾`) y precargado en el modal de fin de juego corresponde al `user_metadata.name`/`full_name` real de la cuenta autenticada.
-- [ ] El botón `{user.name} ▾` del Nav abre un dropdown real con la opción "Cerrar sesión"; al usarla, la sesión se cierra sin redirigir (el usuario permanece en la misma página) y el Nav vuelve a mostrar "Iniciar Sesión".
-- [ ] Con sesión iniciada, al terminar una partida el input de iniciales + botón "GUARDAR PUNTUACIÓN" funcionan igual que hoy, y la fila insertada en `scores` tiene `user_id` poblado con el id de la cuenta.
-- [ ] Sin sesión (modo invitado), al terminar una partida el input de iniciales + botón "GUARDAR PUNTUACIÓN" aparecen deshabilitados, con un texto aclaratorio indicando que hace falta iniciar sesión.
-- [ ] `/`, `/biblioteca`, `/salon`, `/about` y jugar cualquier juego siguen siendo accesibles sin sesión iniciada (no se agregó ningún redirect ni bloqueo de rutas).
-- [ ] El proxy de refresco de sesión (`proxy.ts`) mantiene la sesión activa entre navegaciones sin desloguear al usuario prematuramente.
-- [ ] `npm run build` compila sin errores de tipos.
+- [x] Un usuario nuevo puede registrarse con email/contraseña + nombre desde `/auth`, recibe un correo de confirmación y no puede iniciar sesión hasta confirmarlo.
+- [x] Tras hacer clic en el link de confirmación del correo, el usuario queda con sesión iniciada y es redirigido a `/biblioteca`.
+- [x] Un usuario ya registrado puede iniciar sesión con email/contraseña; credenciales inválidas o correo no confirmado muestran un mensaje de error en el formulario, sin redirigir.
+- [x] Un usuario puede iniciar sesión con Google y con GitHub desde los botones correspondientes en `/auth`.
+- [x] "JUGAR COMO INVITADO" sigue funcionando exactamente igual que antes: permite jugar sin cuenta, sin pedir email ni contraseña.
+- [x] Un usuario puede solicitar "¿Olvidaste tu contraseña?", recibe un correo, y desde el link puede definir una contraseña nueva y volver a iniciar sesión con ella.
+- [x] El nombre mostrado en `Nav.tsx` (`{user.name} ▾`) y precargado en el modal de fin de juego corresponde al `user_metadata.name`/`full_name` real de la cuenta autenticada.
+- [x] El botón `{user.name} ▾` del Nav abre un dropdown real con la opción "Cerrar sesión"; al usarla, la sesión se cierra sin redirigir (el usuario permanece en la misma página) y el Nav vuelve a mostrar "Iniciar Sesión".
+- [x] Con sesión iniciada, al terminar una partida el input de iniciales + botón "GUARDAR PUNTUACIÓN" funcionan igual que hoy, y la fila insertada en `scores` tiene `user_id` poblado con el id de la cuenta.
+- [x] Sin sesión (modo invitado), al terminar una partida el input de iniciales + botón "GUARDAR PUNTUACIÓN" aparecen deshabilitados, con un texto aclaratorio indicando que hace falta iniciar sesión.
+- [x] `/`, `/biblioteca`, `/salon`, `/about` y jugar cualquier juego siguen siendo accesibles sin sesión iniciada (no se agregó ningún redirect ni bloqueo de rutas).
+- [x] El proxy de refresco de sesión (`proxy.ts`) mantiene la sesión activa entre navegaciones sin desloguear al usuario prematuramente.
+- [x] `npm run build` compila sin errores de tipos.
 
 ## Decisiones tomadas y descartadas
 

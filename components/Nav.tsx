@@ -9,12 +9,15 @@ import { useAvUser } from "@/lib/useAvUser";
 export default function Nav() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
   const user = useAvUser();
 
   const isActive = (name: "inicio" | "biblioteca" | "salon" | "about" | "auth") => {
     if (name === "inicio") return pathname === "/";
     if (name === "biblioteca") {
-      return pathname === "/biblioteca" || pathname.startsWith("/juego") || pathname.startsWith("/jugar");
+      return (
+        pathname === "/biblioteca" || pathname.startsWith("/juego") || pathname.startsWith("/jugar")
+      );
     }
     if (name === "salon") return pathname === "/salon";
     if (name === "about") return pathname === "/about";
@@ -22,9 +25,11 @@ export default function Nav() {
   };
 
   const close = () => setOpen(false);
+  const closeAccount = () => setAccountOpen(false);
 
   const handleSignOut = () => {
     clearAvUser();
+    closeAccount();
   };
 
   return (
@@ -56,9 +61,16 @@ export default function Nav() {
           <span>CRÉDITOS · 03</span>
         </div>
         {user ? (
-          <button className="btn ghost auth-btn" onClick={handleSignOut}>
-            {user.name} ▾
-          </button>
+          <div className="account-menu">
+            <button className="btn ghost auth-btn" onClick={() => setAccountOpen((v) => !v)}>
+              {user.name} ▾
+            </button>
+            {accountOpen && (
+              <div className="account-dropdown">
+                <button onClick={handleSignOut}>Cerrar sesión</button>
+              </div>
+            )}
+          </div>
         ) : (
           <Link href="/auth" className="btn auth-btn">
             Iniciar Sesión
@@ -68,6 +80,8 @@ export default function Nav() {
           ≡
         </button>
       </nav>
+
+      {accountOpen && <div className="account-backdrop" onClick={closeAccount}></div>}
 
       <div className={"av-mobile-backdrop" + (open ? " open" : "")} onClick={close}></div>
       <aside className={"av-mobile-panel" + (open ? " open" : "")}>
@@ -90,7 +104,10 @@ export default function Nav() {
           {user ? "Cuenta" : "Iniciar Sesión"}
         </Link>
         <div style={{ flex: 1 }}></div>
-        <div className="pixel" style={{ fontSize: 9, color: "var(--ink-faint)", letterSpacing: "0.16em" }}>
+        <div
+          className="pixel"
+          style={{ fontSize: 9, color: "var(--ink-faint)", letterSpacing: "0.16em" }}
+        >
           CRÉDITOS · 03
         </div>
       </aside>

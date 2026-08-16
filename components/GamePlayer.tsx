@@ -320,16 +320,33 @@ export default function GamePlayer({ game }: { game: Game }) {
             <div className="final-label">PUNTUACIÓN FINAL</div>
             <div className="final">{finalScore.toLocaleString("es-ES")}</div>
             {!saved ? (
-              <div className="input-row">
-                <input
-                  value={name}
-                  onChange={(e) => setName(e.target.value.toUpperCase().slice(0, 10))}
-                  placeholder="TUS INICIALES"
-                />
-                <button className="btn yellow" onClick={saveScore}>
-                  GUARDAR PUNTUACIÓN
-                </button>
-              </div>
+              <>
+                <div className="input-row">
+                  <input
+                    value={name}
+                    onChange={(e) => setName(e.target.value.toUpperCase().slice(0, 10))}
+                    placeholder="TUS INICIALES"
+                    disabled={!user}
+                  />
+                  <button className="btn yellow" onClick={saveScore} disabled={!user}>
+                    GUARDAR PUNTUACIÓN
+                  </button>
+                </div>
+                {!user && (
+                  <div
+                    className="mono"
+                    style={{
+                      fontSize: 11,
+                      color: "var(--ink-faint)",
+                      letterSpacing: "0.08em",
+                      marginTop: -6,
+                      marginBottom: 12,
+                    }}
+                  >
+                    Inicia sesión para guardar tu puntuación en el Salón de la Fama.
+                  </div>
+                )}
+              </>
             ) : (
               <div className="toast-saved">▸ PUNTUACIÓN GUARDADA_</div>
             )}
