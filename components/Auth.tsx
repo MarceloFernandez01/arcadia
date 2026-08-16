@@ -214,7 +214,7 @@ export default function Auth() {
               <>
                 <form onSubmit={submit}>
                   <div className="field">
-                    <label>{tab === "in" ? "Usuario o correo" : "Usuario"}</label>
+                    <label>{tab === "in" ? "Correo electrónico" : "Usuario"}</label>
                     <input
                       type={tab === "in" ? "email" : "text"}
                       value={user}
