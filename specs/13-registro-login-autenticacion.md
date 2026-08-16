@@ -1,6 +1,6 @@
 # SPEC 13 — Registro, inicio de sesión y autenticación real
 
-> **Estado:** Aprobado
+> **Estado:** Implementado
 > **Depende de:** `04-integracion-supabase` (clientes de Supabase ya configurados) — la tabla `scores` (migración `001_games_and_scores.sql`) ya tiene `user_id uuid null references auth.users(id)`, anticipando esta spec.
 > **Fecha:** 2026-08-15
 > **Objetivo:** Reemplazar la sesión simulada de `localStorage` (`av_user`) por autenticación real con Supabase Auth —registro e inicio de sesión con email/contraseña y con Google/GitHub, confirmación de correo obligatoria y recuperación de contraseña—, conectando `components/Auth.tsx` y `Nav.tsx` a la sesión real, y restringiendo el guardado de puntaje en el Salón de la Fama a usuarios autenticados (el modo invitado sigue permitiendo jugar, pero no guardar puntaje).
