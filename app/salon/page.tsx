@@ -13,15 +13,13 @@ export default async function SalonPage() {
 
   const supabase = await createClient();
   const {
-    data: { session },
-  } = await supabase.auth.getSession();
+    data: { user },
+  } = await supabase.auth.getUser();
 
   const yourBestByGame: Record<string, ScoreRow | null> = {};
-  if (session) {
+  if (user) {
     const bestEntries = await Promise.all(
-      games.map(
-        async (game) => [game.id, await getUserBestScore(game.id, session.user.id)] as const,
-      ),
+      games.map(async (game) => [game.id, await getUserBestScore(game.id, user.id)] as const),
     );
     Object.assign(yourBestByGame, Object.fromEntries(bestEntries));
   }

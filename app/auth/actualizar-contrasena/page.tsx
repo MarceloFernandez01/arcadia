@@ -5,10 +5,10 @@ import UpdatePassword from "@/components/UpdatePassword";
 export default async function ActualizarContrasenaPage() {
   const supabase = await createClient();
   const {
-    data: { session },
-  } = await supabase.auth.getSession();
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  if (!session) {
+  if (!user) {
     redirect("/auth");
   }
 
