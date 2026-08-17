@@ -29,7 +29,9 @@ export async function updateSession(request: NextRequest) {
 
   // No ejecutar código entre createServerClient y getUser(): un descuido acá
   // puede desincronizar la cookie refrescada y desloguear al usuario al azar.
-  await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  return supabaseResponse;
+  return { supabaseResponse, user };
 }
