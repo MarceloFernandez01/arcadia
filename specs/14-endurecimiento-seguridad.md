@@ -1,6 +1,6 @@
 # SPEC 14 — Endurecimiento de seguridad (RLS, función SECURITY DEFINER, headers y configuración de Auth)
 
-> **Estado:** Aprobado
+> **Estado:** Implementado
 > **Depende de:** `04-integracion-supabase` (clientes de Supabase), `06-leaderboard-supabase` (tablas `games`/`scores` y sus políticas RLS originales), `13-registro-login-autenticacion` (sesión real, de la que depende `auth.uid()` para la nueva política de `scores`)
 > **Fecha:** 2026-08-16
 > **Objetivo:** Cerrar los hallazgos de `references/security/security-checklist.md` que no requieren plan pago — eliminar las políticas RLS permisivas de `games` (INSERT/UPDATE públicos), exigir `auth.uid() = user_id` para insertar en `scores`, revocar la ejecución pública de la función `rls_auto_enable()`, agregar headers de seguridad en `next.config.ts`, ampliar `proxy.ts` para proteger `/auth/actualizar-contrasena` y redirigir `/auth` cuando ya hay sesión, y documentar como paso manual la configuración pendiente en el Dashboard de Supabase (contraseña mínima de 8 caracteres, requisito de complejidad "Lowercase, uppercase letters, digits and symbols", límite de signups por IP); Leaked Password Protection queda fuera por requerir el plan Pro de Supabase.
@@ -69,20 +69,20 @@ Convención: como en las migraciones previas (`002`–`005`), el archivo lleva e
 
 ## Criterios de aceptación
 
-- [ ] `games_public_insert` y `games_public_update` ya no existen; solo `games_public_read` sigue activa sobre `games`.
-- [ ] `scores_public_insert` exige `auth.uid() = user_id`; un insert sin sesión o con un `user_id` distinto al de la sesión activa es rechazado por Postgres.
-- [ ] Un usuario autenticado sigue guardando su puntaje normalmente y viéndolo en `/salon`, sin cambios de código en `lib/scores.ts`.
-- [ ] `anon` y `authenticated` ya no pueden ejecutar `rls_auto_enable()` vía `/rest/v1/rpc/rls_auto_enable`; la función sigue funcionando como event trigger al crear tablas nuevas en `public`.
-- [ ] Las respuestas HTTP de la app incluyen los 5 headers de seguridad (`X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Strict-Transport-Security`, `Permissions-Policy`) con los valores definidos en el plan.
-- [ ] Entrar a `/auth/actualizar-contrasena` sin sesión activa redirige a `/auth`, mediante `proxy.ts` (ya no mediante el chequeo del componente de página).
-- [ ] Entrar a `/auth` con una sesión activa redirige a `/biblioteca`; sin sesión, `/auth` muestra el formulario normalmente.
-- [ ] El flujo de recuperación de contraseña (`/auth/callback` con código de recuperación → `/auth/actualizar-contrasena`) sigue funcionando de punta a punta sin quedar atrapado en ninguna de las dos redirecciones nuevas.
-- [ ] `/`, `/biblioteca`, `/salon`, `/about` y jugar siguen siendo accesibles sin sesión iniciada (sin cambios respecto a la spec 13).
-- [ ] En el Dashboard de Supabase quedan activados: contraseña mínima de 8 caracteres y requisito de complejidad "Lowercase, uppercase letters, digits and symbols"; registrarse con una contraseña débil muestra el error de Supabase en `/auth` sin romper la página.
-- [ ] El límite de signups por IP del Dashboard está confirmado como activo (valor por defecto de Supabase).
-- [ ] `mcp__supabase__get_advisors(type: "security")` ya no reporta los 3 warnings `rls_policy_always_true` ni los 2 `*_security_definer_function_executable`. El warning `auth_leaked_password_protection` sigue apareciendo — es esperado, queda pendiente por costo.
-- [ ] `references/security/security-checklist.md` tiene marcados como resueltos todos los ítems cubiertos por esta spec; el de Leaked Password Protection queda explícitamente anotado como pendiente por requerir plan Pro.
-- [ ] `npm run build` compila sin errores de tipos.
+- [x] `games_public_insert` y `games_public_update` ya no existen; solo `games_public_read` sigue activa sobre `games`.
+- [x] `scores_public_insert` exige `auth.uid() = user_id`; un insert sin sesión o con un `user_id` distinto al de la sesión activa es rechazado por Postgres.
+- [x] Un usuario autenticado sigue guardando su puntaje normalmente y viéndolo en `/salon`, sin cambios de código en `lib/scores.ts`.
+- [x] `anon` y `authenticated` ya no pueden ejecutar `rls_auto_enable()` vía `/rest/v1/rpc/rls_auto_enable`; la función sigue funcionando como event trigger al crear tablas nuevas en `public`.
+- [x] Las respuestas HTTP de la app incluyen los 5 headers de seguridad (`X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Strict-Transport-Security`, `Permissions-Policy`) con los valores definidos en el plan.
+- [x] Entrar a `/auth/actualizar-contrasena` sin sesión activa redirige a `/auth`, mediante `proxy.ts` (ya no mediante el chequeo del componente de página).
+- [x] Entrar a `/auth` con una sesión activa redirige a `/biblioteca`; sin sesión, `/auth` muestra el formulario normalmente.
+- [x] El flujo de recuperación de contraseña (`/auth/callback` con código de recuperación → `/auth/actualizar-contrasena`) sigue funcionando de punta a punta sin quedar atrapado en ninguna de las dos redirecciones nuevas.
+- [x] `/`, `/biblioteca`, `/salon`, `/about` y jugar siguen siendo accesibles sin sesión iniciada (sin cambios respecto a la spec 13).
+- [x] En el Dashboard de Supabase quedan activados: contraseña mínima de 8 caracteres y requisito de complejidad "Lowercase, uppercase letters, digits and symbols"; registrarse con una contraseña débil muestra el error de Supabase en `/auth` sin romper la página.
+- [x] El límite de signups por IP del Dashboard está confirmado como activo (valor por defecto de Supabase).
+- [x] `mcp__supabase__get_advisors(type: "security")` ya no reporta los 3 warnings `rls_policy_always_true` ni los 2 `*_security_definer_function_executable`. El warning `auth_leaked_password_protection` sigue apareciendo — es esperado, queda pendiente por costo.
+- [ x `references/security/security-checklist.md` tiene marcados como resueltos todos los ítems cubiertos por esta spec; el de Leaked Password Protection queda explícitamente anotado como pendiente por requerir plan Pro.
+- [x] `npm run build` compila sin errores de tipos.
 
 ## Decisiones tomadas y descartadas
 
