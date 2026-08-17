@@ -1,6 +1,7 @@
 import HallOfFame from "@/components/HallOfFame";
 import { getAllGames } from "@/lib/games";
-import { getTopScores } from "@/lib/scores.server";
+import { getTopScores, getUserBestScore } from "@/lib/scores.server";
+import { createClient } from "@/lib/supabase/server";
 import type { ScoreRow } from "@/lib/data";
 
 export default async function SalonPage() {
@@ -10,5 +11,18 @@ export default async function SalonPage() {
   );
   const scoresByGame: Record<string, ScoreRow[]> = Object.fromEntries(scoresEntries);
 
-  return <HallOfFame games={games} scoresByGame={scoresByGame} />;
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const yourBestByGame: Record<string, ScoreRow | null> = {};
+  if (user) {
+    const bestEntries = await Promise.all(
+      games.map(async (game) => [game.id, await getUserBestScore(game.id, user.id)] as const),
+    );
+    Object.assign(yourBestByGame, Object.fromEntries(bestEntries));
+  }
+
+  return <HallOfFame games={games} scoresByGame={scoresByGame} yourBestByGame={yourBestByGame} />;
 }

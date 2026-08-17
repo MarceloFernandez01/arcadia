@@ -3,22 +3,21 @@
 import { useState } from "react";
 import Link from "next/link";
 import type { Game, ScoreRow } from "@/lib/data";
-import { useAvUser } from "@/lib/useAvUser";
 
 export default function HallOfFame({
   games,
   scoresByGame,
+  yourBestByGame,
 }: {
   games: Game[];
   scoresByGame: Record<string, ScoreRow[]>;
+  yourBestByGame: Record<string, ScoreRow | null>;
 }) {
   const [tab, setTab] = useState(games[0]?.id ?? "");
-  const user = useAvUser();
 
   const rows = scoresByGame[tab] ?? [];
   const game = games.find((g) => g.id === tab);
-  const youRank = user ? Math.floor(8 + (tab.length % 4)) : null;
-  const youScore = user ? rows[5]?.score - 2400 : null;
+  const yourBest = yourBestByGame[tab] ?? null;
 
   return (
     <div className="av-hall fade-in">
@@ -107,23 +106,23 @@ export default function HallOfFame({
                 <div className="dt">{r.date}</div>
               </div>
             ))}
-            {user && game && (
+            {yourBest && game && (
               <>
                 <div className="tr you-label">▸ TU MEJOR MARCA EN {game.title}</div>
                 <div className="tr you" style={{ animationDelay: `${rows.length * 50 + 50}ms` }}>
                   <div className="rk" style={{ color: "var(--yellow)" }}>
-                    #{String(youRank).padStart(2, "0")}
+                    #{String(yourBest.rank).padStart(2, "0")}
                   </div>
                   <div className="pl" style={{ color: "var(--yellow)" }}>
-                    {user.name}
+                    {yourBest.name}
                   </div>
                   <div
                     className="sc"
                     style={{ color: "var(--yellow)", textShadow: "0 0 6px rgba(245,255,0,0.5)" }}
                   >
-                    {(youScore || 9999).toLocaleString("es-ES")}
+                    {yourBest.score.toLocaleString("es-ES")}
                   </div>
-                  <div className="dt">11/05/2026</div>
+                  <div className="dt">{yourBest.date}</div>
                 </div>
               </>
             )}

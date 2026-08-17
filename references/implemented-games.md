@@ -1,6 +1,7 @@
 # Juegos implementados
 
-Datos consultados desde la tabla `games` de Supabase (2026-07-28).
+Datos consultados desde la tabla `games` de Supabase (2026-07-28; fila de Frogger agregada desde
+`supabase/migrations/005_seed_frogger.sql`).
 
 | ID         | Título      | Categoría | Color   | Estatus       | Descripción breve                                                          |
 | ---------- | ----------- | --------- | ------- | ------------- | --------------------------------------------------------------------------- |
@@ -8,3 +9,4 @@ Datos consultados desde la tabla `games` de Supabase (2026-07-28).
 | tetris     | TETRIS      | PUZZLE    | magenta | Implementado  | El clásico rompecabezas de bloques que caen.                                 |
 | arkanoid   | ARKANOID    | ARCADE    | green   | Implementado  | Rompe bloques con la paleta y la pelota antes de que se te acaben las vidas. |
 | snake      | SNAKE       | ARCADE    | yellow  | Implementado  | Come frutas, crece y no choques contra tu propia cola.                       |
+| frogger    | FROGGER     | ARCADE    | green   | Implementado  | Cruza la carretera y el río antes de que se agote el tiempo.                 |

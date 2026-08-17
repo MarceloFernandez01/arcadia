@@ -279,6 +279,46 @@ a {
 .av-nav .hamburger {
   display: none;
 }
+.account-menu {
+  position: relative;
+}
+.account-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 45;
+}
+.account-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: max-content;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  z-index: 60;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.account-dropdown button {
+  text-align: left;
+  padding: 10px 12px;
+  font-family: var(--pixel);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  white-space: nowrap;
+  color: var(--ink-dim);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition:
+    color 120ms,
+    background 120ms;
+}
+.account-dropdown button:hover {
+  color: var(--cyan);
+  background: rgba(255, 255, 255, 0.04);
+}
 
 @media (max-width: 840px) {
   .av-nav {
@@ -1460,6 +1500,14 @@ a {
   border: 1px solid var(--line);
   outline: 0;
   font-family: var(--mono);
+}
+.modal .input-row input:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.modal .input-row .btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 .modal .input-row input:focus {
   border-color: var(--cyan);

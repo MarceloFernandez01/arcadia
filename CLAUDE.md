@@ -23,8 +23,12 @@ Plataforma para jugar online y competir por puntos. El desarrollo sigue Spec Dri
 - `07-tetris-game.md` — juego Tetris (`lib/games/tetris/engine.ts`, con canvas secundario de "siguiente pieza"); introdujo el punto de extensión `lib/games/types.ts` + `lib/games/registry.ts` (ver "Motores de juego" en Arquitectura) y dejó `GamePlayer.tsx` completamente genérico.
 - `08-arkanoid-game.md` — juego Arkanoid (`lib/games/arkanoid/engine.ts`, `levels.ts`, `spritesheet.ts`), con assets en `public/games/arkanoid/`.
 - `09-snake-game.md` — juego Snake (`lib/games/snake/engine.ts`, `fruits.ts`), con wrap-around en los bordes y frutas del atlas retro.
+- `10-controles-tactiles-moviles.md` — soporte táctil en el reproductor: hook `lib/useTouchDevice.ts`, componente `TouchControls` (D-pad + botones de acción que despachan eventos de teclado sintéticos) y escalado responsive del canvas. Introdujo `touchControls` en `lib/games/registry.ts`. No modifica el layout de escritorio.
+- `11-refinamiento-hud-movil.md` — refinamiento del HUD en `.av-player.touch-mode`: compactación de la fila de stats, selector de skin movido al panel de pausa y ajuste del canvas para que HUD + canvas + D-pad quepan sin scroll a 360×640, sin reducir la cuadrícula lógica de cada juego.
+- `12-optimizacion-performance-frogger.md` — optimización por frame de `lib/games/frogger/engine.ts` (fondo estático cacheado en canvas offscreen, sprites con glow horneado, glow agrupado por lote de color, lookups precalculados, notificación al HUD condicional, derivados cacheados por tick), sin alterar el resultado visual ni la jugabilidad. Es el catálogo de referencia del agente `game-performance`.
+- `13-registro-login-autenticacion.md` — reemplazó la sesión mock de `localStorage` por autenticación real con Supabase Auth (email/contraseña con confirmación de correo obligatoria, Google, GitHub, recuperación de contraseña). `components/Auth.tsx` pasó a llamar Supabase directamente; `Nav.tsx` cambió el botón `{user.name} ▾` por un dropdown real con "Cerrar sesión"; `lib/avUser.ts`/`lib/useAvUser.ts` se reescribieron por dentro para envolver la sesión real (misma forma pública `AvUser { name }`). Agregó `proxy.ts` + `lib/supabase/middleware.ts` (refresco de sesión en cada request — `proxy.ts` es la convención vigente en Next.js 16, reemplaza `middleware.ts`) y las rutas `app/auth/callback/route.ts` / `app/auth/actualizar-contrasena/page.tsx`. El guardado de puntaje en el Salón de la Fama quedó restringido a usuarios autenticados (`lib/scores.ts`, `components/GamePlayer.tsx`); el modo invitado sigue permitiendo jugar sin guardar puntaje.
 
-Además existen game jams en `specs/game-jam/<slug>/`, generadas por el agente `game-jam` (ver "Agentes"): la numeración `GJ-` es local a esa carpeta y no consume la numeración correlativa global anterior. Hoy solo existe `specs/game-jam/frogger/` con dos specs en estado **Draft**, sin implementar: `01-frogger-game.md` (Frogger clásico, id `frogger`) y `02-frogger-poderes-game.md` (variante con poderes temporales, id `frogger-poderes`); ambas autocontenidas e independientes entre sí.
+Además existen game jams en `specs/game-jam/<slug>/`, generadas por el agente `game-jam` (ver "Agentes"): la numeración `GJ-` es local a esa carpeta y no consume la numeración correlativa global anterior. Hoy solo existe `specs/game-jam/frogger/` con un spec, `01-frogger-game.md` (Frogger clásico, id `frogger`), en estado **Implementado**: motor en `lib/games/frogger/engine.ts` + `lanes.ts`, seed `supabase/migrations/005_seed_frogger.sql`, todo dibujado por código (sin assets en `public/games/`).
 
 ## Skills
 
@@ -96,11 +100,11 @@ Todos los screenshots tomados con el MCP de Playwright (`browser_take_screenshot
 
 ## Arquitectura
 
-**Implementación real** (App Router, TypeScript), resultado de migrar el prototipo estático siguiendo los specs de `specs/`. Sesión mock (sin backend ni autenticación real) vía `localStorage` (`av_user`); ver `lib/avUser.ts` / `lib/useAvUser.ts`. El catálogo de juegos y los puntajes viven en Supabase (`lib/games.ts`, `lib/scores.ts`, `lib/scores.server.ts`); no hay data mock de juegos.
+**Implementación real** (App Router, TypeScript), resultado de migrar el prototipo estático siguiendo los specs de `specs/`. Autenticación real vía Supabase Auth (email/contraseña, Google, GitHub); ver `lib/avUser.ts` / `lib/useAvUser.ts` (envuelven la sesión de Supabase, misma forma pública `AvUser { name }`) y `proxy.ts` + `lib/supabase/middleware.ts` (refresco de sesión en cada request). El catálogo de juegos y los puntajes viven en Supabase (`lib/games.ts`, `lib/scores.ts`, `lib/scores.server.ts`); no hay data mock de juegos.
 
 ### Motores de juego
 
-Punto de extensión introducido en el SPEC 07 para los juegos (Asteroids, Tetris, Arkanoid, Snake y más). Detalle completo, incluyendo el sistema de skins, en `lib/games/CLAUDE.md`.
+Punto de extensión introducido en el SPEC 07 para los juegos (hoy Asteroids, Tetris, Arkanoid, Snake y Frogger). Detalle completo, incluyendo el sistema de skins y los controles táctiles, en `lib/games/CLAUDE.md`.
 
 ### Supabase y migraciones
 
@@ -116,10 +120,12 @@ Ver `supabase/CLAUDE.md` para el detalle de migraciones, seeds y validación de 
 
 **Código fuente de los juegos portados** (`references/started-games/`): JS original de cada juego antes de portarlo a TypeScript/Canvas (`02-asteroids`, `03-tetris`, `04-arkanoid`), fuente de verdad para nuevos ports vía `/add-game`.
 
-**Assets crudos** (`references/assest-source/`): recursos gráficos sin procesar usados como base de un motor (ej. `snake-assets/`, `frogger-assets/`).
+**Assets crudos** (`references/assest-source/`): recursos gráficos sin procesar usados como base de un motor (`snake-assets/`, `frogger-assets/`). Solo Arkanoid y Snake terminaron con assets publicados en `public/games/`; Frogger dibuja todo por código.
 
 **Catálogo actual y memoria del planificador** (`references/implemented-games.md`, `references/game-ideas.md`, `references/game-suggestions-todo.md`): estado del catálogo de juegos y memoria/backlog que mantiene el agente `game-planner` (ver "Agentes" arriba).
 
 **Memoria de skins** (`references/game-with-theme.md`): estado de skins (`clasico`/`retro`/`neon`) por juego que mantiene el agente `skin-designer` (ver "Agentes" arriba).
+
+**Memoria de revisión móvil** (`references/mobile-review-log.md`): objetivos pendientes/revisados, cambios aplicados y hallazgos abiertos que mantiene el agente `mobile-porter` (ver "Agentes" arriba).
 
 **Memoria de performance** (`references/game-performance-log.md`): estado de optimización por juego que mantiene el agente `game-performance` (ver "Agentes" arriba).

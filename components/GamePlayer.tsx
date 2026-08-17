@@ -10,14 +10,6 @@ import type { ArcadeGameEngine, EngineState } from "@/lib/games/types";
 import { saveScore as saveScoreRemote } from "@/lib/scores";
 import TouchControls from "@/components/TouchControls";
 
-function getSavedPlayerName(): string | null {
-  try {
-    return localStorage.getItem("av_player_name");
-  } catch {
-    return null;
-  }
-}
-
 function getStoredColorScheme(gameId: string): string | null {
   try {
     return localStorage.getItem(`av_color_scheme_${gameId}`);
@@ -26,11 +18,17 @@ function getStoredColorScheme(gameId: string): string | null {
   }
 }
 
+function truncateName(value: string, max = 10): string {
+  return value.length > max ? `${value.slice(0, max)}…` : value;
+}
+
 export default function GamePlayer({ game }: { game: Game }) {
   const router = useRouter();
   const user = useAvUser();
   const isTouch = useTouchDevice();
   const displayName = user ? user.name : "INVITADO";
+  const displayNameRef = useRef(displayName);
+  displayNameRef.current = displayName;
   const [paused, setPaused] = useState(false);
   const [pauseMenuOpen, setPauseMenuOpen] = useState(false);
   const [over, setOver] = useState(false);
@@ -65,7 +63,7 @@ export default function GamePlayer({ game }: { game: Game }) {
         onGameOver: (score) => {
           engine.pause();
           setFinalScore(score);
-          setName(getSavedPlayerName() || displayName);
+          setName(displayNameRef.current);
           setOver(true);
         },
         initialColorScheme: getStoredColorScheme(game.id) ?? undefined,
@@ -118,7 +116,7 @@ export default function GamePlayer({ game }: { game: Game }) {
   const endGame = () => {
     engineRef.current?.pause();
     setFinalScore(engineState.score);
-    setName(getSavedPlayerName() || displayName);
+    setName(displayNameRef.current);
     setOver(true);
   };
 
@@ -133,11 +131,6 @@ export default function GamePlayer({ game }: { game: Game }) {
 
   const saveScore = async () => {
     await saveScoreRemote(game.id, name, finalScore);
-    try {
-      localStorage.setItem("av_player_name", name);
-    } catch {
-      // localStorage no disponible
-    }
     setSaved(true);
   };
 
@@ -152,7 +145,7 @@ export default function GamePlayer({ game }: { game: Game }) {
             <div className="hud-stat">
               <div className="l">Jugador</div>
               <div className="v" style={{ color: "var(--ink)" }}>
-                {name}
+                {truncateName(displayName)}
               </div>
             </div>
           )}
@@ -320,16 +313,33 @@ export default function GamePlayer({ game }: { game: Game }) {
             <div className="final-label">PUNTUACIÓN FINAL</div>
             <div className="final">{finalScore.toLocaleString("es-ES")}</div>
             {!saved ? (
-              <div className="input-row">
-                <input
-                  value={name}
-                  onChange={(e) => setName(e.target.value.toUpperCase().slice(0, 10))}
-                  placeholder="TUS INICIALES"
-                />
-                <button className="btn yellow" onClick={saveScore}>
-                  GUARDAR PUNTUACIÓN
-                </button>
-              </div>
+              <>
+                <div className="input-row">
+                  <input
+                    value={name}
+                    onChange={(e) => setName(e.target.value.toUpperCase().slice(0, 10))}
+                    placeholder="TUS INICIALES"
+                    disabled={!user}
+                  />
+                  <button className="btn yellow" onClick={saveScore} disabled={!user}>
+                    GUARDAR PUNTUACIÓN
+                  </button>
+                </div>
+                {!user && (
+                  <div
+                    className="mono"
+                    style={{
+                      fontSize: 11,
+                      color: "var(--ink-faint)",
+                      letterSpacing: "0.08em",
+                      marginTop: -6,
+                      marginBottom: 12,
+                    }}
+                  >
+                    Inicia sesión para guardar tu puntuación en el Salón de la Fama.
+                  </div>
+                )}
+              </>
             ) : (
               <div className="toast-saved">▸ PUNTUACIÓN GUARDADA_</div>
             )}
