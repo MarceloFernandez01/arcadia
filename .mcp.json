@@ -3,6 +3,14 @@
     "supabase": {
       "type": "http",
       "url": "https://mcp.supabase.com/mcp?project_ref=hcfjfjfqvnzwisurvbiz"
+    },
+    "supabase-readonly": {
+      "type": "http",
+      "url": "https://mcp.supabase.com/mcp?project_ref=hcfjfjfqvnzwisurvbiz&read_only=true"
+    },
+    "semgrep": {
+      "type": "http",
+      "url": "https://mcp.semgrep.ai/mcp"
     }
   }
 }

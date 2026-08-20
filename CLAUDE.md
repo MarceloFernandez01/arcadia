@@ -89,6 +89,24 @@ Flujo de Spec Driven Design (skills globales en `~/.claude/skills/`):
   de forma **estática** (lectura de código + `npm run build`/`npm run lint`, sin Playwright ni navegador);
   la comprobación visual final queda a cargo del usuario. Ninguna optimización puede alterar el resultado
   visual ni la jugabilidad. Mantiene memoria en `references/game-performance-log.md`.
+- `security-auditor` (`.claude/agents/security-auditor.md`) — audita la seguridad completa de la base
+  de datos Supabase y de la aplicación en cada invocación (RLS, políticas, funciones `SECURITY DEFINER`,
+  headers, route handlers, redirects, dependencias con `npm audit`, secretos filtrados), sin exigir un
+  objetivo puntual. Es el único agente con acceso al MCP de Supabase, por una entrada separada y dedicada
+  (`supabase-readonly` en `.mcp.json`, con `read_only=true`) que ejecuta toda query como un rol Postgres
+  de solo lectura: `apply_migration` y el resto de las tools mutantes no existen en esa conexión, y un
+  `INSERT`/`UPDATE`/`DELETE`/`DROP` por `execute_sql` es rechazado por Postgres, no solo por instrucción
+  del agente. El resto del proyecto (migraciones vía `/spec-impl`) sigue usando la entrada `supabase`
+  completa. También usa el MCP
+  de Semgrep (análisis estático de seguridad sobre `app/`/`lib/`), que corre contra el endpoint remoto
+  `https://mcp.semgrep.ai/mcp`; por eso tiene prohibido enviarle cualquier archivo con credenciales
+  (`.env*`). **Solo audita y
+  reporta**: no corrige código de la app, no escribe migraciones ni aplica nada sobre Supabase; cerrar
+  un hallazgo pasa por `/spec` → `/spec-impl`, igual que hizo la spec 14. Solo escribe en
+  `references/security/security-checklist.md`, y únicamente si hay novedades. Toma como referencia
+  `specs/13-registro-login-autenticacion.md` y `specs/14-endurecimiento-seguridad.md` para no reportar
+  como hallazgo nuevo lo ya descartado a propósito en esas specs. Mantiene memoria en
+  `references/security/security-checklist.md`.
 
 ## Dev server
 
@@ -129,3 +147,5 @@ Ver `supabase/CLAUDE.md` para el detalle de migraciones, seeds y validación de 
 **Memoria de revisión móvil** (`references/mobile-review-log.md`): objetivos pendientes/revisados, cambios aplicados y hallazgos abiertos que mantiene el agente `mobile-porter` (ver "Agentes" arriba).
 
 **Memoria de performance** (`references/game-performance-log.md`): estado de optimización por juego que mantiene el agente `game-performance` (ver "Agentes" arriba).
+
+**Memoria de seguridad** (`references/security/security-checklist.md`): checklist de la spec 14, hallazgos abiertos y riesgos aceptados que mantiene el agente `security-auditor` (ver "Agentes" arriba).
