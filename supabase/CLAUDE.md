@@ -1,6 +1,7 @@
 # supabase
 
-- MCP de Supabase configurado en `.mcp.json` (proyecto `hcfjfjfqvnzwisurvbiz`); las migraciones se aplican con la tool `apply_migration` del MCP, nunca a mano.
-- Migraciones versionadas en `supabase/migrations/`: `001_games_and_scores.sql` define el esquema y las políticas RLS; cada juego agrega solo su propio seed (`002_seed_tetris.sql`, `003_seed_arkanoid.sql`, `004_seed_snake.sql`, `005_seed_frogger.sql`). Un juego nuevo no debe tocar `001` ni las políticas existentes.
+- MCP de Supabase configurado en `.mcp.json` (proyecto `hcfjfjfqvnzwisurvbiz`); las migraciones se aplican con la tool `apply_migration` del MCP, nunca a mano. Ese MCP apunta **exclusivamente** al proyecto de desarrollo.
+- Migraciones versionadas en `supabase/migrations/`: `001_games_and_scores.sql` define el esquema y las políticas RLS; cada juego agrega solo su propio seed (`002_seed_tetris.sql`, `003_seed_arkanoid.sql`, `004_seed_snake.sql`, `005_seed_frogger.sql`). Un juego nuevo no debe tocar `001` ni las políticas existentes. `006_security_hardening.sql` (spec 14) endurece esas políticas después: elimina `games_public_insert`/`games_public_update`, restringe `scores_public_insert` a `auth.uid() = user_id`, y revoca el `execute` público de `public.rls_auto_enable()` (función creada por la plataforma Supabase, no por estas migraciones).
 - El seed de un juego se aplica antes de escribir su motor: eso deja el juego visible en `/biblioteca` y `/salon` desde el inicio, aunque todavía no sea jugable.
 - `npx tsx scripts/check-supabase.ts` valida la conexión usando las variables de `.env.local` (plantilla en `.env.template`).
+- Existe una segunda instancia de **producción**, separada de la de desarrollo. Ningún agente ni el MCP tienen acceso a ella; se opera a mano desde su propio dashboard con los scripts de `supabase/production/` y el runbook `references/deploy/produccion-supabase.md`.
